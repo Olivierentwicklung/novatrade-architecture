@@ -309,3 +309,16 @@ def test_confirming_order_changes_status_to_confirmed() -> None:
     order.confirm()
 
     assert order.status is OrderStatus.CONFIRMED
+
+
+def test_cancelling_order_changes_status_to_cancelled() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+
+    order.cancel()
+
+    assert order.status is OrderStatus.CANCELLED
