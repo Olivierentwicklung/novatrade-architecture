@@ -35,8 +35,7 @@ class Order:
     def add_product(self, product_id: str, quantity: int) -> None:
         """Add a Product to the Order."""
 
-        if self.is_placed:
-            raise CannotModifyPlacedOrder
+        self._ensure_modifiable()
 
         added_quantity = Quantity(quantity)
 
@@ -58,8 +57,7 @@ class Order:
     def change_quantity(self, product_id: str, quantity: int) -> None:
         """Change the Quantity of a Product in the Order."""
 
-        if self.is_placed:
-            raise CannotModifyPlacedOrder
+        self._ensure_modifiable()
 
         new_quantity = Quantity(quantity)
 
@@ -88,10 +86,15 @@ class Order:
 
     def remove_product(self, product_id: str) -> None:
         """Remove a Product from the Order."""
-        if self.is_placed:
-            raise CannotModifyPlacedOrder
+
+        self._ensure_modifiable()
 
         for index, line in enumerate(self._lines):
             if line.product_id == product_id:
                 del self._lines[index]
                 return
+
+    def _ensure_modifiable(self) -> None:
+        """Ensure that the Order can still be modified."""
+        if self.is_placed:
+            raise CannotModifyPlacedOrder
