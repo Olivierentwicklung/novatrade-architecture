@@ -85,3 +85,10 @@ class Order:
             raise CannotPlaceEmptyOrder
 
         self.is_placed = True
+
+    def remove_product(self, product_id: str) -> None:
+        """Remove a Product from the Order."""
+        for index, line in enumerate(self._lines):
+            if line.product_id == product_id:
+                del self._lines[index]
+                return
