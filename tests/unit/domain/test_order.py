@@ -1,4 +1,5 @@
 import pytest
+
 from domain.order import CannotPlaceEmptyOrder, Order
 
 
