@@ -1,6 +1,6 @@
 import pytest
 
-from novatrade.domain.order import CannotPlaceEmptyOrder, Order
+from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderLine
 from novatrade.domain.quantity import InvalidQuantity, Quantity
 
 
@@ -58,3 +58,19 @@ def test_changed_product_quantity_must_be_positive():
             product_id="BOOK-123",
             quantity=0,
         )
+
+
+def test_order_exposes_its_lines_as_order_lines():
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    assert order.lines == [
+        OrderLine(
+            product_id="BOOK-123",
+            quantity=Quantity(2),
+        )
+    ]
