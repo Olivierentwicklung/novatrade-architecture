@@ -109,6 +109,7 @@ class Order:
             raise CannotPlaceEmptyOrder
 
         self.is_placed = True
+        self.status = OrderStatus.PLACED
 
     def remove_product(self, product_id: str) -> None:
         """Remove a Product from the Order."""
