@@ -24,8 +24,13 @@ class Order:
 
     def __init__(self) -> None:
         """Create an empty Order."""
-        self.lines: list[OrderLine] = []
+        self._lines: list[OrderLine] = []
         self.is_placed = False
+
+    @property
+    def lines(self) -> tuple[OrderLine, ...]:
+        """Return the Order Lines without exposing the mutable collection."""
+        return tuple(self._lines)
 
     def add_product(self, product_id: str, quantity: int) -> None:
         """Add a Product to the Order."""
@@ -37,13 +42,13 @@ class Order:
 
         for index, line in enumerate(self.lines):
             if line.product_id == product_id:
-                self.lines[index] = OrderLine(
+                self._lines[index] = OrderLine(
                     product_id=product_id,
                     quantity=Quantity(line.quantity.value + added_quantity.value),
                 )
                 return
 
-        self.lines.append(
+        self._lines.append(
             OrderLine(
                 product_id=product_id,
                 quantity=added_quantity,
@@ -60,7 +65,7 @@ class Order:
 
         for index, line in enumerate(self.lines):
             if line.product_id == product_id:
-                self.lines[index] = OrderLine(
+                self._lines[index] = OrderLine(
                     product_id=product_id,
                     quantity=new_quantity,
                 )
@@ -76,7 +81,7 @@ class Order:
 
     def place(self) -> None:
         """Place the Order or reject it when it is empty."""
-        if not self.lines:
+        if not self._lines:
             raise CannotPlaceEmptyOrder
 
         self.is_placed = True
