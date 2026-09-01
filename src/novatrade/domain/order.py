@@ -15,6 +15,10 @@ class CannotConfirmUnplacedOrder(Exception):
     """Raised when attempting to confirm an Order before placement."""
 
 
+class CannotCancelUnplacedOrder(Exception):
+    """Raised when attempting to cancel an Order before placement."""
+
+
 @dataclass(frozen=True)
 class OrderLine:
     """Represents a Product and its Quantity within an Order."""
@@ -113,5 +117,8 @@ class Order:
         self.is_confirmed = True
 
     def cancel(self) -> None:
-        """Cancel the Order."""
+        """Cancel the Order or reject it when it has not been placed."""
+        if not self.is_placed:
+            raise CannotCancelUnplacedOrder
+
         self.is_cancelled = True
