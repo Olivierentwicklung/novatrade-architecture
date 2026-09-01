@@ -10,6 +10,7 @@ from novatrade.domain.order import (
     CannotPlaceEmptyOrder,
     Order,
     OrderLine,
+    OrderStatus,
 )
 from novatrade.domain.quantity import InvalidQuantity, Quantity
 
@@ -282,4 +283,4 @@ def test_confirmed_order_cannot_be_cancelled() -> None:
 def test_new_order_has_draft_status() -> None:
     order = Order()
 
-    assert order.status == "draft"
+    assert order.status is OrderStatus.DRAFT

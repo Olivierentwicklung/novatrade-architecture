@@ -1,6 +1,16 @@
 from dataclasses import dataclass
+from enum import Enum
 
 from novatrade.domain.quantity import Quantity
+
+
+class OrderStatus(Enum):
+    """Represents the lifecycle status of an Order."""
+
+    DRAFT = "draft"
+    PLACED = "placed"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
 
 
 class CannotPlaceEmptyOrder(Exception):
@@ -37,6 +47,8 @@ class Order:
     def __init__(self) -> None:
         """Create an empty Order."""
         self._lines: list[OrderLine] = []
+        self.status = OrderStatus.DRAFT
+
         self.is_placed = False
         self.is_confirmed = False
         self.is_cancelled = False
