@@ -88,6 +88,9 @@ class Order:
 
     def remove_product(self, product_id: str) -> None:
         """Remove a Product from the Order."""
+        if self.is_placed:
+            raise CannotModifyPlacedOrder
+
         for index, line in enumerate(self._lines):
             if line.product_id == product_id:
                 del self._lines[index]
