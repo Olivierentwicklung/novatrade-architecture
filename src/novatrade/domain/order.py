@@ -23,11 +23,21 @@ class Order:
         self.lines: list[OrderLine] = []
 
     def add_product(self, product_id: str, quantity: int) -> None:
-        """Add a Product with a positive Quantity to the Order."""
+        """Add a Product to the Order."""
+        added_quantity = Quantity(quantity)
+
+        for index, line in enumerate(self.lines):
+            if line.product_id == product_id:
+                self.lines[index] = OrderLine(
+                    product_id=product_id,
+                    quantity=Quantity(line.quantity.value + added_quantity.value),
+                )
+                return
+
         self.lines.append(
             OrderLine(
                 product_id=product_id,
-                quantity=Quantity(quantity),
+                quantity=added_quantity,
             )
         )
 
