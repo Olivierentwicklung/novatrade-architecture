@@ -132,6 +132,7 @@ class Order:
             raise CannotConfirmUnplacedOrder
 
         self.is_confirmed = True
+        self.status = OrderStatus.CONFIRMED
 
     def cancel(self) -> None:
         """Cancel the Order when its current state allows cancellation."""
