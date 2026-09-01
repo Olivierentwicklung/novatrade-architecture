@@ -39,7 +39,7 @@ class Order:
 
         added_quantity = Quantity(quantity)
 
-        for index, line in enumerate(self.lines):
+        for index, line in enumerate(self._lines):
             if line.product_id == product_id:
                 self._lines[index] = OrderLine(
                     product_id=product_id,
@@ -61,7 +61,7 @@ class Order:
 
         new_quantity = Quantity(quantity)
 
-        for index, line in enumerate(self.lines):
+        for index, line in enumerate(self._lines):
             if line.product_id == product_id:
                 self._lines[index] = OrderLine(
                     product_id=product_id,
@@ -71,7 +71,7 @@ class Order:
 
     def quantity_for(self, product_id: str) -> int | None:
         """Return the Quantity of a Product in the Order."""
-        for line in self.lines:
+        for line in self._lines:
             if line.product_id == product_id:
                 return line.quantity.value
 
