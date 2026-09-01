@@ -1,6 +1,16 @@
 from dataclasses import dataclass
+from enum import Enum
 
 from novatrade.domain.quantity import Quantity
+
+
+class OrderStatus(Enum):
+    """Represents the lifecycle status of an Order."""
+
+    DRAFT = "draft"
+    PLACED = "placed"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
 
 
 class CannotPlaceEmptyOrder(Exception):
@@ -9,6 +19,22 @@ class CannotPlaceEmptyOrder(Exception):
 
 class CannotModifyPlacedOrder(Exception):
     """Raised when attempting to modify a placed Order."""
+
+
+class CannotConfirmUnplacedOrder(Exception):
+    """Raised when attempting to confirm an Order before placement."""
+
+
+class CannotCancelUnplacedOrder(Exception):
+    """Raised when attempting to cancel an Order before placement."""
+
+
+class CannotCancelConfirmedOrder(Exception):
+    """Raised when attempting to cancel a confirmed Order."""
+
+
+class CannotCancelCancelledOrder(Exception):
+    """Raised when attempting to cancel an already cancelled Order."""
 
 
 @dataclass(frozen=True)
@@ -25,7 +51,7 @@ class Order:
     def __init__(self) -> None:
         """Create an empty Order."""
         self._lines: list[OrderLine] = []
-        self.is_placed = False
+        self.status = OrderStatus.DRAFT
 
     @property
     def lines(self) -> tuple[OrderLine, ...]:
@@ -82,7 +108,7 @@ class Order:
         if not self._lines:
             raise CannotPlaceEmptyOrder
 
-        self.is_placed = True
+        self.status = OrderStatus.PLACED
 
     def remove_product(self, product_id: str) -> None:
         """Remove a Product from the Order."""
@@ -96,5 +122,25 @@ class Order:
 
     def _ensure_modifiable(self) -> None:
         """Ensure that the Order can still be modified."""
-        if self.is_placed:
+        if self.status is not OrderStatus.DRAFT:
             raise CannotModifyPlacedOrder
+
+    def confirm(self) -> None:
+        """Confirm the Order or reject it when it has not been placed."""
+        if self.status is not OrderStatus.PLACED:
+            raise CannotConfirmUnplacedOrder
+
+        self.status = OrderStatus.CONFIRMED
+
+    def cancel(self) -> None:
+        """Cancel the Order when its current state allows cancellation."""
+        if self.status is OrderStatus.DRAFT:
+            raise CannotCancelUnplacedOrder
+
+        if self.status is OrderStatus.CONFIRMED:
+            raise CannotCancelConfirmedOrder
+
+        if self.status is OrderStatus.CANCELLED:
+            raise CannotCancelCancelledOrder
+
+        self.status = OrderStatus.CANCELLED

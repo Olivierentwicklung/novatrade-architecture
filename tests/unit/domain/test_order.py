@@ -3,10 +3,15 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from novatrade.domain.order import (
+    CannotCancelCancelledOrder,
+    CannotCancelConfirmedOrder,
+    CannotCancelUnplacedOrder,
+    CannotConfirmUnplacedOrder,
     CannotModifyPlacedOrder,
     CannotPlaceEmptyOrder,
     Order,
     OrderLine,
+    OrderStatus,
 )
 from novatrade.domain.quantity import InvalidQuantity, Quantity
 
@@ -213,3 +218,121 @@ def test_product_cannot_be_removed_after_order_is_placed() -> None:
         order.remove_product(
             product_id="BOOK-123",
         )
+
+
+def test_placed_order_can_be_confirmed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+
+    order.confirm()
+
+    assert order.status is OrderStatus.CONFIRMED
+
+
+def test_unplaced_order_cannot_be_confirmed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    with pytest.raises(CannotConfirmUnplacedOrder):
+        order.confirm()
+
+
+def test_placed_order_can_be_cancelled() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+
+    order.cancel()
+
+    assert order.status is OrderStatus.CANCELLED
+
+
+def test_unplaced_order_cannot_be_cancelled() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    with pytest.raises(CannotCancelUnplacedOrder):
+        order.cancel()
+
+
+def test_confirmed_order_cannot_be_cancelled() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+    order.confirm()
+
+    with pytest.raises(CannotCancelConfirmedOrder):
+        order.cancel()
+
+
+def test_new_order_has_draft_status() -> None:
+    order = Order()
+
+    assert order.status is OrderStatus.DRAFT
+
+
+def test_placing_order_changes_status_to_placed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.place()
+
+    assert order.status is OrderStatus.PLACED
+
+
+def test_confirming_order_changes_status_to_confirmed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+
+    order.confirm()
+
+    assert order.status is OrderStatus.CONFIRMED
+
+
+def test_cancelling_order_changes_status_to_cancelled() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+
+    order.cancel()
+
+    assert order.status is OrderStatus.CANCELLED
+
+
+def test_cancelled_order_cannot_be_cancelled_again() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+    order.cancel()
+
+    with pytest.raises(CannotCancelCancelledOrder):
+        order.cancel()
