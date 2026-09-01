@@ -296,3 +296,16 @@ def test_placing_order_changes_status_to_placed() -> None:
     order.place()
 
     assert order.status is OrderStatus.PLACED
+
+
+def test_confirming_order_changes_status_to_confirmed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+
+    order.confirm()
+
+    assert order.status is OrderStatus.CONFIRMED
