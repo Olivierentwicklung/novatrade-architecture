@@ -3,6 +3,7 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from novatrade.domain.order import (
+    CannotCancelCancelledOrder,
     CannotCancelConfirmedOrder,
     CannotCancelUnplacedOrder,
     CannotConfirmUnplacedOrder,
@@ -322,3 +323,16 @@ def test_cancelling_order_changes_status_to_cancelled() -> None:
     order.cancel()
 
     assert order.status is OrderStatus.CANCELLED
+
+
+def test_cancelled_order_cannot_be_cancelled_again() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+    order.cancel()
+
+    with pytest.raises(CannotCancelCancelledOrder):
+        order.cancel()
