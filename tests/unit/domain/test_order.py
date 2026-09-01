@@ -16,7 +16,12 @@ def test_product_can_be_added_to_order():
 
     order.add_product(product_id="BOOK-123", quantity=2)
 
-    assert order.lines == [("BOOK-123", Quantity(2))]
+    assert order.lines == [
+        OrderLine(
+            product_id="BOOK-123",
+            quantity=Quantity(2),
+        )
+    ]
 
 
 def test_product_quantity_must_be_positive():
