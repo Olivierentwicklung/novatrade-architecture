@@ -7,6 +7,10 @@ class CannotPlaceEmptyOrder(Exception):
     """Raised when attempting to place an Order without any products."""
 
 
+class CannotModifyPlacedOrder(Exception):
+    """Raised when attempting to modify a placed Order."""
+
+
 @dataclass(frozen=True)
 class OrderLine:
     """Represents a Product and its Quantity within an Order."""
@@ -21,9 +25,14 @@ class Order:
     def __init__(self) -> None:
         """Create an empty Order."""
         self.lines: list[OrderLine] = []
+        self.is_placed = False
 
     def add_product(self, product_id: str, quantity: int) -> None:
         """Add a Product to the Order."""
+
+        if self.is_placed:
+            raise CannotModifyPlacedOrder
+
         added_quantity = Quantity(quantity)
 
         for index, line in enumerate(self.lines):
@@ -43,6 +52,10 @@ class Order:
 
     def change_quantity(self, product_id: str, quantity: int) -> None:
         """Change the Quantity of a Product in the Order."""
+
+        if self.is_placed:
+            raise CannotModifyPlacedOrder
+
         new_quantity = Quantity(quantity)
 
         for index, line in enumerate(self.lines):
@@ -65,3 +78,5 @@ class Order:
         """Place the Order or reject it when it is empty."""
         if not self.lines:
             raise CannotPlaceEmptyOrder
+
+        self.is_placed = True

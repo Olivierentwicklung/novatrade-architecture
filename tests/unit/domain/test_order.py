@@ -2,7 +2,12 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderLine
+from novatrade.domain.order import (
+    CannotModifyPlacedOrder,
+    CannotPlaceEmptyOrder,
+    Order,
+    OrderLine,
+)
 from novatrade.domain.quantity import InvalidQuantity, Quantity
 
 
@@ -137,14 +142,25 @@ def test_product_cannot_be_added_after_order_is_placed() -> None:
 
     order.place()
 
+    with pytest.raises(CannotModifyPlacedOrder):
+        order.add_product(
+            product_id="PEN-456",
+            quantity=1,
+        )
+
+
+def test_product_quantity_cannot_be_changed_after_order_is_placed() -> None:
+    order = Order()
+
     order.add_product(
-        product_id="PEN-456",
-        quantity=1,
+        product_id="BOOK-123",
+        quantity=2,
     )
 
-    assert order.lines == [
-        OrderLine(
+    order.place()
+
+    with pytest.raises(CannotModifyPlacedOrder):
+        order.change_quantity(
             product_id="BOOK-123",
-            quantity=Quantity(2),
+            quantity=5,
         )
-    ]
