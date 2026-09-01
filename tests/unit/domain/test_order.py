@@ -3,6 +3,7 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from novatrade.domain.order import (
+    CannotConfirmUnplacedOrder,
     CannotModifyPlacedOrder,
     CannotPlaceEmptyOrder,
     Order,
@@ -235,6 +236,5 @@ def test_unplaced_order_cannot_be_confirmed() -> None:
         quantity=2,
     )
 
-    order.confirm()
-
-    assert order.is_confirmed is False
+    with pytest.raises(CannotConfirmUnplacedOrder):
+        order.confirm()

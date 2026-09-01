@@ -11,6 +11,10 @@ class CannotModifyPlacedOrder(Exception):
     """Raised when attempting to modify a placed Order."""
 
 
+class CannotConfirmUnplacedOrder(Exception):
+    """Raised when attempting to confirm an Order before placement."""
+
+
 @dataclass(frozen=True)
 class OrderLine:
     """Represents a Product and its Quantity within an Order."""
@@ -101,5 +105,8 @@ class Order:
             raise CannotModifyPlacedOrder
 
     def confirm(self) -> None:
-        """Confirm the Order."""
+        """Confirm the Order or reject it when it has not been placed."""
+        if not self.is_placed:
+            raise CannotConfirmUnplacedOrder
+
         self.is_confirmed = True
