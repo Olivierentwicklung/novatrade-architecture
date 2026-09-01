@@ -49,10 +49,6 @@ class Order:
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
 
-        self.is_placed = False
-        self.is_confirmed = False
-        self.is_cancelled = False
-
     @property
     def lines(self) -> tuple[OrderLine, ...]:
         """Return the Order Lines without exposing the mutable collection."""
@@ -108,7 +104,6 @@ class Order:
         if not self._lines:
             raise CannotPlaceEmptyOrder
 
-        self.is_placed = True
         self.status = OrderStatus.PLACED
 
     def remove_product(self, product_id: str) -> None:
@@ -123,7 +118,7 @@ class Order:
 
     def _ensure_modifiable(self) -> None:
         """Ensure that the Order can still be modified."""
-        if self.is_placed:
+        if self.status is not OrderStatus.DRAFT:
             raise CannotModifyPlacedOrder
 
     def confirm(self) -> None:
@@ -131,7 +126,6 @@ class Order:
         if self.status is not OrderStatus.PLACED:
             raise CannotConfirmUnplacedOrder
 
-        self.is_confirmed = True
         self.status = OrderStatus.CONFIRMED
 
     def cancel(self) -> None:
@@ -142,5 +136,4 @@ class Order:
         if self.status is OrderStatus.CONFIRMED:
             raise CannotCancelConfirmedOrder
 
-        self.is_cancelled = True
         self.status = OrderStatus.CANCELLED

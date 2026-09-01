@@ -229,7 +229,7 @@ def test_placed_order_can_be_confirmed() -> None:
 
     order.confirm()
 
-    assert order.is_confirmed is True
+    assert order.status is OrderStatus.CONFIRMED
 
 
 def test_unplaced_order_cannot_be_confirmed() -> None:
@@ -253,7 +253,7 @@ def test_placed_order_can_be_cancelled() -> None:
 
     order.cancel()
 
-    assert order.is_cancelled is True
+    assert order.status is OrderStatus.CANCELLED
 
 
 def test_unplaced_order_cannot_be_cancelled() -> None:
