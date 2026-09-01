@@ -26,3 +26,19 @@ def test_product_quantity_must_be_positive():
             product_id="BOOK-123",
             quantity=0,
         )
+
+
+def test_product_quantity_can_be_changed():
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.change_quantity(
+        product_id="BOOK-123",
+        quantity=5,
+    )
+
+    assert order.quantity_for("BOOK-123") == 5
