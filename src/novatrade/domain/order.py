@@ -63,4 +63,5 @@ class Order:
 
     def place(self) -> None:
         """Place the Order or reject it when it is empty."""
-        raise CannotPlaceEmptyOrder
+        if not self.lines:
+            raise CannotPlaceEmptyOrder
