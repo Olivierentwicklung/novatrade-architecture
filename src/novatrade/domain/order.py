@@ -143,3 +143,4 @@ class Order:
             raise CannotCancelConfirmedOrder
 
         self.is_cancelled = True
+        self.status = OrderStatus.CANCELLED
