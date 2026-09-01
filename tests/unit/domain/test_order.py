@@ -125,3 +125,26 @@ def test_order_line_is_immutable() -> None:
 
     with pytest.raises(FrozenInstanceError):
         line.quantity = Quantity(5)  # type:ignore
+
+
+def test_product_cannot_be_added_after_order_is_placed() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.place()
+
+    order.add_product(
+        product_id="PEN-456",
+        quantity=1,
+    )
+
+    assert order.lines == [
+        OrderLine(
+            product_id="BOOK-123",
+            quantity=Quantity(2),
+        )
+    ]
