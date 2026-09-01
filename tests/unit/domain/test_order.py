@@ -79,3 +79,24 @@ def test_order_exposes_its_lines_as_order_lines():
             quantity=Quantity(2),
         )
     ]
+
+
+def test_adding_same_product_again_increases_its_quantity() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=3,
+    )
+
+    assert order.lines == [
+        OrderLine(
+            product_id="BOOK-123",
+            quantity=Quantity(5),
+        )
+    ]
