@@ -197,3 +197,19 @@ def test_product_can_be_removed_from_order() -> None:
     )
 
     assert order.lines == ()
+
+
+def test_product_cannot_be_removed_after_order_is_placed() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.place()
+
+    with pytest.raises(CannotModifyPlacedOrder):
+        order.remove_product(
+            product_id="BOOK-123",
+        )
