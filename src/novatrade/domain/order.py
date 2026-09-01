@@ -128,7 +128,7 @@ class Order:
 
     def confirm(self) -> None:
         """Confirm the Order or reject it when it has not been placed."""
-        if not self.is_placed:
+        if self.status is not OrderStatus.PLACED:
             raise CannotConfirmUnplacedOrder
 
         self.is_confirmed = True
@@ -136,10 +136,10 @@ class Order:
 
     def cancel(self) -> None:
         """Cancel the Order when its current state allows cancellation."""
-        if not self.is_placed:
+        if self.status is OrderStatus.DRAFT:
             raise CannotCancelUnplacedOrder
 
-        if self.is_confirmed:
+        if self.status is OrderStatus.CONFIRMED:
             raise CannotCancelConfirmedOrder
 
         self.is_cancelled = True
