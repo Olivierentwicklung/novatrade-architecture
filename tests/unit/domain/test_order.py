@@ -226,3 +226,15 @@ def test_placed_order_can_be_confirmed() -> None:
     order.confirm()
 
     assert order.is_confirmed is True
+
+
+def test_unplaced_order_cannot_be_confirmed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.confirm()
+
+    assert order.is_confirmed is False
