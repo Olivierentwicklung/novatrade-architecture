@@ -42,3 +42,18 @@ def test_product_quantity_can_be_changed():
     )
 
     assert order.quantity_for("BOOK-123") == 5
+
+
+def test_changed_product_quantity_must_be_positive():
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    with pytest.raises(InvalidQuantity):
+        order.change_quantity(
+            product_id="BOOK-123",
+            quantity=0,
+        )
