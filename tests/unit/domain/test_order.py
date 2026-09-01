@@ -1,6 +1,6 @@
 import pytest
 
-from src.novatrade.domain.order import CannotPlaceEmptyOrder, Order
+from novatrade.domain.order import CannotPlaceEmptyOrder, Order
 
 
 def test_empty_order_cannot_be_placed():
