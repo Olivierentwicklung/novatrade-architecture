@@ -33,6 +33,10 @@ class CannotCancelConfirmedOrder(Exception):
     """Raised when attempting to cancel a confirmed Order."""
 
 
+class CannotCancelCancelledOrder(Exception):
+    """Raised when attempting to cancel an already cancelled Order."""
+
+
 @dataclass(frozen=True)
 class OrderLine:
     """Represents a Product and its Quantity within an Order."""
@@ -135,5 +139,8 @@ class Order:
 
         if self.status is OrderStatus.CONFIRMED:
             raise CannotCancelConfirmedOrder
+
+        if self.status is OrderStatus.CANCELLED:
+            raise CannotCancelCancelledOrder
 
         self.status = OrderStatus.CANCELLED
