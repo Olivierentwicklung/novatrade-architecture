@@ -31,6 +31,7 @@ class Order:
         self._lines: list[OrderLine] = []
         self.is_placed = False
         self.is_confirmed = False
+        self.is_cancelled = False
 
     @property
     def lines(self) -> tuple[OrderLine, ...]:
@@ -110,3 +111,7 @@ class Order:
             raise CannotConfirmUnplacedOrder
 
         self.is_confirmed = True
+
+    def cancel(self) -> None:
+        """Cancel the Order."""
+        self.is_cancelled = True
