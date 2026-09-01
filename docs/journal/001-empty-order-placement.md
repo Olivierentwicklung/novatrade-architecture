@@ -2,46 +2,97 @@
 
 ## Context
 
-NovaTrade clarified that the customer places an Order.
+NovaTrade clarified that the Customer places an Order.
 
 ## Business Rule
 
 An empty Order cannot be placed.
 
-## What We Tried
+## RED
 
-We expressed the rule directly through the Order:
+We expressed the rule with the first domain test:
 
 ```python
-order.place()
+def test_empty_order_cannot_be_placed():
+    order = Order()
+
+    with pytest.raises(CannotPlaceEmptyOrder):
+        order.place()
 ```
 
-## Decision
+The first execution failed because the Domain Model did not yet exist:
 
-`Order` currently rejects placement unconditionally because all Orders are empty in the current model.
+```text
+ModuleNotFoundError: No module named 'domain'
+```
 
-## Why
+## GREEN
 
-This is the smallest implementation satisfying the known rule.
+We introduced the smallest implementation capable of satisfying the rule.
+
+`Order.place()` raises `CannotPlaceEmptyOrder`.
+
+At this point every Order is empty because the model has no way to add products yet.
+
+The test passed.
+
+## REFACTOR
+
+We moved the production code into a conventional `src/` package layout:
+
+```text
+src/
+└── novatrade/
+    └── domain/
+        └── order.py
+```
+
+NovaTrade is installed as an editable Python package through `pyproject.toml`.
+
+The application is imported as:
+
+```python
+from novatrade.domain.order import Order
+```
+
+`src` is a packaging directory, not part of the application's package name and not an architectural layer.
+
+After the refactor, the test remained green.
 
 ## What We Deliberately Did Not Add
 
+We did not introduce:
+
 - Order status
 - Order ID
+- Product
+- Quantity
 - Repository
-- database model
+- Unit of Work
 - Django
+- database persistence
 - generic validation framework
 
-None is required yet.
+None of these concepts is required to enforce the current business rule.
 
-## Test That Proves It
+## Evidence
 
 ```text
 tests/unit/domain/test_order.py
-::test_empty_order_cannot_be_placed
+```
+
+proves that an empty Order cannot be placed.
+
+After the packaging refactor:
+
+```text
+1 passed
 ```
 
 ## Open Pressure
 
-NovaTrade needs a way to add products before an Order can ever be successfully placed.
+Every Order in the current model is empty.
+
+NovaTrade now needs a way to add a Product to an Order before that Order can ever be successfully placed.
+
+That pressure belongs to the next step in the model's evolution.
