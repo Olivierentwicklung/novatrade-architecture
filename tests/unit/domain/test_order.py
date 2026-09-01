@@ -182,3 +182,18 @@ def test_order_exposes_lines_as_immutable_collection() -> None:
     )
 
     assert isinstance(order.lines, tuple)
+
+
+def test_product_can_be_removed_from_order() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.remove_product(
+        product_id="BOOK-123",
+    )
+
+    assert order.lines == ()
