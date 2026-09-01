@@ -284,3 +284,15 @@ def test_new_order_has_draft_status() -> None:
     order = Order()
 
     assert order.status is OrderStatus.DRAFT
+
+
+def test_placing_order_changes_status_to_placed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.place()
+
+    assert order.status is OrderStatus.PLACED
