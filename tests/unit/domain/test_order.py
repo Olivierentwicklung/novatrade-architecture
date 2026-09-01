@@ -1,6 +1,8 @@
+from dataclasses import FrozenInstanceError
+
 import pytest
 
-from novatrade.domain.order import CannotPlaceEmptyOrder, Order
+from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderLine
 from novatrade.domain.quantity import InvalidQuantity, Quantity
 
 
@@ -16,7 +18,12 @@ def test_product_can_be_added_to_order():
 
     order.add_product(product_id="BOOK-123", quantity=2)
 
-    assert order.lines == [("BOOK-123", Quantity(2))]
+    assert order.lines == [
+        OrderLine(
+            product_id="BOOK-123",
+            quantity=Quantity(2),
+        )
+    ]
 
 
 def test_product_quantity_must_be_positive():
@@ -58,3 +65,63 @@ def test_changed_product_quantity_must_be_positive():
             product_id="BOOK-123",
             quantity=0,
         )
+
+
+def test_order_exposes_its_lines_as_order_lines():
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    assert order.lines == [
+        OrderLine(
+            product_id="BOOK-123",
+            quantity=Quantity(2),
+        )
+    ]
+
+
+def test_adding_same_product_again_increases_its_quantity() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=3,
+    )
+
+    assert order.lines == [
+        OrderLine(
+            product_id="BOOK-123",
+            quantity=Quantity(5),
+        )
+    ]
+
+
+def test_order_lines_with_same_values_are_equal() -> None:
+    first = OrderLine(
+        product_id="BOOK-123",
+        quantity=Quantity(2),
+    )
+    second = OrderLine(
+        product_id="BOOK-123",
+        quantity=Quantity(2),
+    )
+
+    assert first == second
+
+
+def test_order_line_is_immutable() -> None:
+    line = OrderLine(
+        product_id="BOOK-123",
+        quantity=Quantity(2),
+    )
+
+    with pytest.raises(FrozenInstanceError):
+        line.quantity = Quantity(5)  # type:ignore
