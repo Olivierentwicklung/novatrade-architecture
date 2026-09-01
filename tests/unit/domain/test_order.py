@@ -277,3 +277,9 @@ def test_confirmed_order_cannot_be_cancelled() -> None:
 
     with pytest.raises(CannotCancelConfirmedOrder):
         order.cancel()
+
+
+def test_new_order_has_draft_status() -> None:
+    order = Order()
+
+    assert order.status == "draft"
