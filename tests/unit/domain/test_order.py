@@ -263,3 +263,17 @@ def test_unplaced_order_cannot_be_cancelled() -> None:
 
     with pytest.raises(CannotCancelUnplacedOrder):
         order.cancel()
+
+
+def test_confirmed_order_cannot_be_cancelled() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+    order.confirm()
+
+    order.cancel()
+
+    assert order.is_cancelled is False
