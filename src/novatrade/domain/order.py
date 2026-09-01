@@ -26,6 +26,7 @@ class Order:
         """Create an empty Order."""
         self._lines: list[OrderLine] = []
         self.is_placed = False
+        self.is_confirmed = False
 
     @property
     def lines(self) -> tuple[OrderLine, ...]:
@@ -98,3 +99,7 @@ class Order:
         """Ensure that the Order can still be modified."""
         if self.is_placed:
             raise CannotModifyPlacedOrder
+
+    def confirm(self) -> None:
+        """Confirm the Order."""
+        self.is_confirmed = True
