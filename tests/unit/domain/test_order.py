@@ -2,7 +2,12 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderLine
+from novatrade.domain.order import (
+    CannotModifyPlacedOrder,
+    CannotPlaceEmptyOrder,
+    Order,
+    OrderLine,
+)
 from novatrade.domain.quantity import InvalidQuantity, Quantity
 
 
@@ -18,12 +23,12 @@ def test_product_can_be_added_to_order():
 
     order.add_product(product_id="BOOK-123", quantity=2)
 
-    assert order.lines == [
+    assert order.lines == (
         OrderLine(
             product_id="BOOK-123",
             quantity=Quantity(2),
-        )
-    ]
+        ),
+    )
 
 
 def test_product_quantity_must_be_positive():
@@ -75,12 +80,12 @@ def test_order_exposes_its_lines_as_order_lines():
         quantity=2,
     )
 
-    assert order.lines == [
+    assert order.lines == (
         OrderLine(
             product_id="BOOK-123",
             quantity=Quantity(2),
-        )
-    ]
+        ),
+    )
 
 
 def test_adding_same_product_again_increases_its_quantity() -> None:
@@ -96,12 +101,12 @@ def test_adding_same_product_again_increases_its_quantity() -> None:
         quantity=3,
     )
 
-    assert order.lines == [
+    assert order.lines == (
         OrderLine(
             product_id="BOOK-123",
             quantity=Quantity(5),
-        )
-    ]
+        ),
+    )
 
 
 def test_order_lines_with_same_values_are_equal() -> None:
@@ -125,3 +130,86 @@ def test_order_line_is_immutable() -> None:
 
     with pytest.raises(FrozenInstanceError):
         line.quantity = Quantity(5)  # type:ignore
+
+
+def test_product_cannot_be_added_after_order_is_placed() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.place()
+
+    with pytest.raises(CannotModifyPlacedOrder):
+        order.add_product(
+            product_id="PEN-456",
+            quantity=1,
+        )
+
+
+def test_product_quantity_cannot_be_changed_after_order_is_placed() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.place()
+
+    with pytest.raises(CannotModifyPlacedOrder):
+        order.change_quantity(
+            product_id="BOOK-123",
+            quantity=5,
+        )
+
+
+def test_order_exposes_lines_as_immutable_collection() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    assert order.lines == (
+        OrderLine(
+            product_id="BOOK-123",
+            quantity=Quantity(2),
+        ),
+    )
+
+    assert isinstance(order.lines, tuple)
+
+
+def test_product_can_be_removed_from_order() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.remove_product(
+        product_id="BOOK-123",
+    )
+
+    assert order.lines == ()
+
+
+def test_product_cannot_be_removed_after_order_is_placed() -> None:
+    order = Order()
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    order.place()
+
+    with pytest.raises(CannotModifyPlacedOrder):
+        order.remove_product(
+            product_id="BOOK-123",
+        )
