@@ -213,3 +213,16 @@ def test_product_cannot_be_removed_after_order_is_placed() -> None:
         order.remove_product(
             product_id="BOOK-123",
         )
+
+
+def test_placed_order_can_be_confirmed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    order.place()
+
+    order.confirm()
+
+    assert order.is_confirmed is True
