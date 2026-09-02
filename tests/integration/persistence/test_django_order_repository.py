@@ -1,7 +1,6 @@
 from novatrade.adapters.persistence.django_order_repository import (
     DjangoOrderRepository,
 )
-
 from novatrade.domain.order import Order
 
 
