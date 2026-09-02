@@ -1,5 +1,4 @@
 from novatrade.application.place_order import place_order
-
 from novatrade.domain.order import Order, OrderStatus
 
 
