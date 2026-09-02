@@ -364,6 +364,6 @@ def test_different_orders_have_different_identities() -> None:
 def test_order_can_be_created_with_existing_identity() -> None:
     existing_id = uuid4()
 
-    order = Order(id=existing_id)
+    order = Order(order_id=existing_id)
 
     assert order.id == existing_id
