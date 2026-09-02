@@ -1,0 +1,20 @@
+from django.db import models
+
+
+class OrderRecord(models.Model):
+    """Persistent representation of a NovaTrade Order."""
+
+    id = models.UUIDField(primary_key=True)
+    status = models.CharField(max_length=20)
+
+
+class OrderLineRecord(models.Model):
+    """Persistent representation of a NovaTrade Order Line."""
+
+    order = models.ForeignKey(
+        OrderRecord,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+    product_id = models.CharField(max_length=255)
+    quantity = models.PositiveIntegerField()
