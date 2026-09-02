@@ -1,4 +1,5 @@
 from dataclasses import FrozenInstanceError
+from uuid import uuid4
 
 import pytest
 
@@ -336,3 +337,58 @@ def test_cancelled_order_cannot_be_cancelled_again() -> None:
 
     with pytest.raises(CannotCancelCancelledOrder):
         order.cancel()
+
+
+def test_new_order_has_an_identity() -> None:
+    order = Order()
+
+    assert order.id is not None
+
+
+def test_different_orders_have_different_identities() -> None:
+    first_order = Order()
+    first_order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    second_order = Order()
+    second_order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    assert first_order.id != second_order.id
+
+
+def test_order_can_be_created_with_existing_identity() -> None:
+    existing_id = uuid4()
+
+    order = Order(order_id=existing_id)
+
+    assert order.id == existing_id
+
+
+def test_orders_with_same_identity_are_equal() -> None:
+    existing_id = uuid4()
+
+    first_order = Order(order_id=existing_id)
+    second_order = Order(order_id=existing_id)
+
+    assert first_order == second_order
+
+
+def test_orders_with_same_contents_but_different_identities_are_not_equal() -> None:
+    first_order = Order()
+    first_order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    second_order = Order()
+    second_order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    assert first_order != second_order

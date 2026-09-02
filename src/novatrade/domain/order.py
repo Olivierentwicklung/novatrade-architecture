@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from uuid import UUID, uuid4
 
 from novatrade.domain.quantity import Quantity
 
@@ -48,8 +49,9 @@ class OrderLine:
 class Order:
     """Represents a customer Order in the NovaTrade ordering domain."""
 
-    def __init__(self) -> None:
-        """Create an empty Order."""
+    def __init__(self, order_id: UUID | None = None) -> None:
+        """Create an empty Order with a new or existing identity."""
+        self.id = order_id if order_id is not None else uuid4()
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
 
@@ -57,6 +59,13 @@ class Order:
     def lines(self) -> tuple[OrderLine, ...]:
         """Return the Order Lines without exposing the mutable collection."""
         return tuple(self._lines)
+
+    def __eq__(self, other: object) -> bool:
+        """Compare Orders by their identity."""
+        if not isinstance(other, Order):
+            return NotImplemented
+
+        return self.id == other.id
 
     def add_product(self, product_id: str, quantity: int) -> None:
         """Add a Product to the Order."""
