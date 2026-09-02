@@ -367,3 +367,12 @@ def test_order_can_be_created_with_existing_identity() -> None:
     order = Order(order_id=existing_id)
 
     assert order.id == existing_id
+
+
+def test_orders_with_same_identity_are_equal() -> None:
+    existing_id = uuid4()
+
+    first_order = Order(order_id=existing_id)
+    second_order = Order(order_id=existing_id)
+
+    assert first_order == second_order
