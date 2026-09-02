@@ -1,23 +1,65 @@
+from uuid import UUID
+
 import pytest
 
+from novatrade.application.in_memory_order_repository import InMemoryOrderRepository
 from novatrade.application.place_order import place_order
 from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderStatus
 
 
-def test_application_can_place_order() -> None:
+def test_application_cannot_place_empty_order() -> None:
+    orders = InMemoryOrderRepository()
+    order = Order()
+    orders.remember(order)
+
+    with pytest.raises(CannotPlaceEmptyOrder):
+        place_order(
+            order_id=order.id,
+            orders=orders,
+        )
+
+
+def test_application_can_place_remembered_order_by_identity() -> None:
+    orders = InMemoryOrderRepository()
     order = Order()
     order.add_product(
         product_id="BOOK-123",
         quantity=2,
     )
+    orders.remember(order)
 
-    place_order(order)
+    place_order(
+        order_id=order.id,
+        orders=orders,
+    )
 
     assert order.status is OrderStatus.PLACED
 
 
-def test_application_cannot_place_empty_order() -> None:
-    order = Order()
+class SpyOrders:
+    def __init__(self, order: Order) -> None:
+        self.order = order
+        self.remembered_order: Order | None = None
 
-    with pytest.raises(CannotPlaceEmptyOrder):
-        place_order(order)
+    def get(self, order_id: UUID) -> Order:
+        assert order_id == self.order.id
+        return self.order
+
+    def remember(self, order: Order) -> None:
+        self.remembered_order = order
+
+
+def test_placed_order_is_remembered() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    orders = SpyOrders(order)
+
+    place_order(
+        order_id=order.id,
+        orders=orders,
+    )
+
+    assert orders.remembered_order == order

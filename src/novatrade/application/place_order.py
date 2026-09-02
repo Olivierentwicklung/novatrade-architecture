@@ -1,6 +1,10 @@
-from novatrade.domain.order import Order
+from uuid import UUID
+
+from novatrade.application.order_repository import OrderRepository
 
 
-def place_order(order: Order) -> None:
-    """Execute the use case of placing an Order."""
+def place_order(order_id: UUID, orders: OrderRepository) -> None:
+    """Place and preserve the Order with the given identity."""
+    order = orders.get(order_id)
     order.place()
+    orders.remember(order)
