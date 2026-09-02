@@ -2,13 +2,13 @@ from uuid import UUID
 
 import pytest
 
-from novatrade.application.orders import Orders
+from novatrade.application.in_memory_order_repository import InMemoryOrderRepository
 from novatrade.application.place_order import place_order
 from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderStatus
 
 
 def test_application_cannot_place_empty_order() -> None:
-    orders = Orders()
+    orders = InMemoryOrderRepository()
     order = Order()
     orders.remember(order)
 
@@ -20,7 +20,7 @@ def test_application_cannot_place_empty_order() -> None:
 
 
 def test_application_can_place_remembered_order_by_identity() -> None:
-    orders = Orders()
+    orders = InMemoryOrderRepository()
     order = Order()
     order.add_product(
         product_id="BOOK-123",

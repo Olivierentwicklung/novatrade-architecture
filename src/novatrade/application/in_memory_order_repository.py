@@ -3,11 +3,11 @@ from uuid import UUID
 from novatrade.domain.order import Order
 
 
-class Orders:
-    """Remembers Orders so they can be retrieved by identity."""
+class InMemoryOrderRepository:
+    """Stores Orders in memory by identity."""
 
     def __init__(self) -> None:
-        """Create an empty collection of Orders."""
+        """Create an empty in-memory Order repository."""
         self._orders: dict[UUID, Order] = {}
 
     def remember(self, order: Order) -> None:
