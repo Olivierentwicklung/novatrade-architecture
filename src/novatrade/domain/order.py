@@ -51,7 +51,7 @@ class Order:
 
     def __init__(self, order_id: UUID | None = None) -> None:
         """Create an empty Order with a new or existing identity."""
-        self.id = order_id or uuid4()
+        self.id = order_id if order_id is not None else uuid4()
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
 
