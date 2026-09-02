@@ -2,7 +2,7 @@ from uuid import UUID
 
 import pytest
 
-from novatrade.application.in_memory_order_repository import InMemoryOrderRepository
+from novatrade.adapters.in_memory.order_repository import InMemoryOrderRepository
 from novatrade.application.place_order import place_order
 from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderStatus
 
