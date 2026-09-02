@@ -376,3 +376,19 @@ def test_orders_with_same_identity_are_equal() -> None:
     second_order = Order(order_id=existing_id)
 
     assert first_order == second_order
+
+
+def test_orders_with_same_contents_but_different_identities_are_not_equal() -> None:
+    first_order = Order()
+    first_order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    second_order = Order()
+    second_order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    assert first_order != second_order
