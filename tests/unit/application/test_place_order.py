@@ -59,3 +59,32 @@ def test_place_order_only_requires_access_to_an_order() -> None:
     )
 
     assert order.status is OrderStatus.PLACED
+
+
+class SpyOrders:
+    def __init__(self, order: Order) -> None:
+        self.order = order
+        self.remembered_order: Order | None = None
+
+    def get(self, order_id: UUID) -> Order:
+        assert order_id == self.order.id
+        return self.order
+
+    def remember(self, order: Order) -> None:
+        self.remembered_order = order
+
+
+def test_placed_order_is_remembered() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    orders = SpyOrders(order)
+
+    place_order(
+        order_id=order.id,
+        orders=orders,
+    )
+
+    assert orders.remembered_order == order
