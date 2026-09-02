@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from uuid import uuid4
 
 from novatrade.domain.quantity import Quantity
 
@@ -50,6 +51,7 @@ class Order:
 
     def __init__(self) -> None:
         """Create an empty Order."""
+        self.id = uuid4()
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
 
