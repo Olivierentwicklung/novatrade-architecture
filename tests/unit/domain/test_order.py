@@ -342,3 +342,19 @@ def test_new_order_has_an_identity() -> None:
     order = Order()
 
     assert order.id is not None
+
+
+def test_different_orders_have_different_identities() -> None:
+    first_order = Order()
+    first_order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    second_order = Order()
+    second_order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    assert first_order.id != second_order.id
