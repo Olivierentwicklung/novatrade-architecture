@@ -336,3 +336,9 @@ def test_cancelled_order_cannot_be_cancelled_again() -> None:
 
     with pytest.raises(CannotCancelCancelledOrder):
         order.cancel()
+
+
+def test_new_order_has_an_identity() -> None:
+    order = Order()
+
+    assert order.id is not None
