@@ -60,6 +60,13 @@ class Order:
         """Return the Order Lines without exposing the mutable collection."""
         return tuple(self._lines)
 
+    def __eq__(self, other: object) -> bool:
+        """Compare Orders by their identity."""
+        if not isinstance(other, Order):
+            return NotImplemented
+
+        return self.id == other.id
+
     def add_product(self, product_id: str, quantity: int) -> None:
         """Add a Product to the Order."""
 
