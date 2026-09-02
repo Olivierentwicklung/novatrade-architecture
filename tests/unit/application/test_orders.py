@@ -1,5 +1,4 @@
 from novatrade.application.orders import Orders
-
 from novatrade.domain.order import Order
 
 
