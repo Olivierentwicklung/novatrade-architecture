@@ -4,9 +4,13 @@ from uuid import UUID
 from novatrade.domain.order import Order
 
 
-class OrderReader(Protocol):
-    """Provides access to Orders by identity."""
+class OrderRepository(Protocol):
+    """Provides access to and preserves Orders."""
 
     def get(self, order_id: UUID) -> Order:
         """Return the Order with the given identity."""
+        ...
+
+    def remember(self, order: Order) -> None:
+        """Preserve an Order."""
         ...
