@@ -1,10 +1,8 @@
-# Architecture Journal — Chapter 14: What Is One Business Operation?
+# Architecture Journal 012 — Unit of Work Transaction Boundary
 
 ## Context
 
-At the beginning of Chapter 14, the Application layer could load an `Order`, execute the domain operation, and preserve the changed aggregate through an `OrderRepository`.
-
-The `place_order()` use case was conceptually:
+NovaTrade's `place_order()` Application use case can load an existing `Order`, perform the Domain operation, and preserve the changed aggregate through the `OrderRepository` Port:
 
 ```python
 order = orders.get(order_id)
@@ -12,35 +10,21 @@ order.place(placed_at)
 orders.remember(order)
 ```
 
-This was sufficient to preserve one changed `Order`, but it did not express the boundary of the complete application operation.
+The repository gives the Application a persistence abstraction for Orders, but `remember(order)` describes preservation of one aggregate.
 
-The architectural question for this chapter became:
+It does not define when the complete Application operation begins or ends.
 
-> What constitutes one business operation, and which layer should define its persistence boundary?
+This distinction became important once the Application needed to express that the persistence work belonging to `Place Order` forms one operation.
 
----
+The architectural question became:
 
-## Decision 1 — `Repository.remember()` Does Not Mean “Operation Complete”
+> Which abstraction represents the persistence boundary of one Application operation, and which layer decides where that boundary begins and ends?
 
-### Pressure
+## Pressure
 
-`OrderRepository.remember()` has a narrow responsibility: preserve an `Order`.
+The first pressure was the distinction between preserving an `Order` and completing an Application operation.
 
-That is different from saying that every persistence change belonging to the `Place Order` application operation has completed successfully.
-
-Treating repository persistence as equivalent to application-operation completion would couple the meaning of the operation to one particular aggregate save.
-
-### Initial Decision
-
-Introduce an application-level `Committer` port:
-
-```python
-class Committer(Protocol):
-    def commit(self) -> None:
-        ...
-```
-
-The use case could then distinguish between preserving an aggregate and completing the persistence operation:
+An intermediate `Committer` Port made that distinction explicit:
 
 ```python
 order = orders.get(order_id)
@@ -49,51 +33,40 @@ orders.remember(order)
 committer.commit()
 ```
 
-### Result
+This solved the immediate problem but exposed another one.
 
-The new behavior passed its test, but the design exposed another problem.
+The `OrderRepository` and `Committer` were independent dependencies. Nothing guaranteed that they participated in the same persistence boundary.
 
-The `OrderRepository` and `Committer` were independent dependencies.
-
-Nothing guaranteed that they participated in the same persistence boundary.
-
-### Status
-
-**Superseded.**
-
-The `Committer` was useful as an intermediate abstraction because it exposed the distinction between saving an aggregate and completing an application operation.
-
-It did not survive the final design.
-
----
-
-## Decision 2 — Persistence Resources for One Operation Belong Together
-
-### Pressure
-
-The Application could receive:
+The Application could theoretically receive:
 
 ```python
 place_order(
+    order_id=order.id,
     orders=some_repository,
+    placed_at=placed_at,
     committer=some_committer,
-    ...
 )
 ```
 
-The type system expressed no relationship between those collaborators.
+where `some_repository` and `some_committer` represented unrelated persistence contexts.
 
-The repository could theoretically operate against one persistence context while the committer controlled another.
+The stronger requirement therefore became:
 
-The stronger requirement became:
+> Persistence resources participating in one Application operation must belong to one persistence boundary.
 
-> The persistence resources participating in one application operation must belong to one persistence boundary.
+Introducing a single persistence object exposed another distinction.
 
-### Decision
+Having an object representing a Unit of Work is not the same as executing inside a Unit of Work boundary.
 
-Replace the independent `OrderRepository` and `Committer` dependencies with a `UnitOfWork`.
+A failing test demonstrated that `place_order()` could use the persistence object without defining when the operation began or ended.
 
-The Unit of Work exposes the repositories participating in the operation:
+The Application therefore needed both a persistence boundary and explicit ownership of its lifetime.
+
+## Decision
+
+Introduce a `UnitOfWork` Port representing the persistence resources belonging to one Application operation.
+
+The Unit of Work exposes the `OrderRepository` participating in that operation:
 
 ```python
 class UnitOfWork(Protocol):
@@ -102,100 +75,24 @@ class UnitOfWork(Protocol):
         ...
 ```
 
-The use case therefore obtains its repository from the same persistence boundary:
+The repository is exposed as a read-only property because the Application needs to use the repository belonging to the Unit of Work, not replace it.
+
+The Unit of Work also defines a context-manager boundary:
 
 ```python
-order = work.orders.get(order_id)
-```
+def __enter__(self) -> "UnitOfWork":
+    ...
 
-### Consequence
-
-The Application no longer assembles unrelated persistence collaborators.
-
-The Unit of Work becomes the Application-facing abstraction representing the persistence resources belonging to one operation.
-
----
-
-## Decision 3 — Expose the Repository as Read-Only Through the Port
-
-### Pressure
-
-The first `UnitOfWork` protocol represented the repository as a mutable protocol attribute:
-
-```python
-orders: OrderRepository
-```
-
-A test double using:
-
-```python
-self.orders = InMemoryOrderRepository()
-```
-
-produced a structural typing incompatibility because mutable protocol attributes are invariant.
-
-More importantly, the Application does not need permission to replace the repository participating in the Unit of Work.
-
-It only needs access to it.
-
-### Decision
-
-Expose `orders` as a read-only property:
-
-```python
-@property
-def orders(self) -> OrderRepository:
+def __exit__(
+    self,
+    exc_type,
+    exc_value,
+    traceback,
+) -> bool | None:
     ...
 ```
 
-### Consequence
-
-The port now expresses the actual requirement more precisely:
-
-> The Application may use the Order repository belonging to this Unit of Work.
-
-It does not imply:
-
-> The Application may replace that repository.
-
-The typing problem therefore revealed a useful design distinction rather than something to suppress.
-
----
-
-## Decision 4 — The Application Owns the Unit of Work Scope
-
-### Pressure
-
-Introducing a `UnitOfWork` object did not yet define when the operation began or ended.
-
-The use case could use:
-
-```python
-work.orders
-```
-
-and call persistence operations without explicitly entering a transactional boundary.
-
-A Unit of Work object is not automatically a Unit of Work scope.
-
-### Evidence
-
-A new test required the use case to execute inside the boundary.
-
-The actual RED was:
-
-```text
-7 collected
-6 passed
-1 failed
-
-assert work.entered
-E assert False
-```
-
-### Decision
-
-Make the Unit of Work a context manager and let the Application use case own its scope:
+The Application use case owns that scope:
 
 ```python
 with work:
@@ -204,216 +101,104 @@ with work:
     work.orders.remember(order)
 ```
 
-### Rationale
-
-The Application layer knows what `Place Order` means.
-
-Django does not.
-
-Therefore the Application should decide which work belongs to the operation, while infrastructure should implement the technical mechanism required to enforce that boundary.
-
-### Consequence
-
-Responsibility is divided as follows:
+This assigns two different responsibilities:
 
 ```text
-Application
-    |
-    | defines what belongs to one operation
-    v
-UnitOfWork Port
-    ^
-    | implements the boundary
-    |
-Infrastructure
+Application          → defines what belongs to one operation
+Persistence adapter  → enforces that boundary technically
 ```
 
----
+The Django adapter implements the Unit of Work using `transaction.atomic()`.
 
-## Decision 5 — Remove Explicit `commit()` From the Final Unit of Work Contract
+A normal exit from the Unit of Work preserves the changes performed during the operation.
 
-### Pressure
+An exception leaving the Unit of Work causes Django to roll back those changes.
 
-After introducing context-manager semantics, the Django implementation naturally mapped the Unit of Work to:
+## Why the Application Owns the Boundary
 
-```python
-transaction.atomic()
-```
+Django knows how to execute a database transaction.
 
-Django commits an atomic block when it exits successfully and rolls it back when an exception leaves the block.
+It does not know what constitutes the `Place Order` Application operation.
 
-An explicit Application call:
+If infrastructure determined the transaction scope, the technical persistence mechanism would decide where an Application operation begins and ends.
 
-```python
-work.commit()
-```
-
-therefore resulted in a Django implementation whose `commit()` method did nothing:
-
-```python
-def commit(self) -> None:
-    pass
-```
-
-The interface no longer described the real behavior.
-
-### Decision
-
-Remove explicit `commit()` from the final `UnitOfWork` port.
-
-Remove the corresponding call from `place_order()`.
-
-Successful completion of the Unit of Work scope now represents successful persistence:
+Instead, `place_order()` defines the scope:
 
 ```python
 with work:
     ...
 ```
 
-Normal exit preserves the work.
+and the adapter translates that scope into the persistence mechanism appropriate for its technology.
 
-Exceptional exit rolls it back.
-
-### Consequence
-
-Earlier tests asserting:
-
-```python
-assert work.committed
-```
-
-became obsolete and were removed.
-
-Their historical value remains preserved in Git.
-
-The final test suite tests observable transaction semantics instead of an implementation-level boolean.
-
----
-
-## Decision 6 — Django Implements the Boundary With `transaction.atomic()`
-
-### Pressure
-
-The Unit of Work abstraction would be incomplete if it worked only with test doubles.
-
-Chapter 13 already demonstrated that behavioral assumptions based only on in-memory implementations can be misleading.
-
-The Django adapter therefore needed to prove real atomic behavior.
-
-### Decision
-
-Implement:
+For Django:
 
 ```text
+Application UnitOfWork scope
+            ↓
 DjangoUnitOfWork
-        |
-        v
+            ↓
 transaction.atomic()
 ```
 
-The adapter enters a Django atomic transaction when the Unit of Work scope begins and leaves it when the scope ends.
+This preserves the dependency direction established by the architecture.
 
-### Failure Semantics
+The Application defines the requirement.
 
-An integration test modifies persisted state inside the Unit of Work and then raises an exception.
+The adapter implements it.
 
-After leaving the boundary, the changed state is reloaded.
+## Alternatives Considered
 
-The changes made during the failed operation do not survive.
-
-Therefore:
-
-```text
-exception
-    ↓
-leave UnitOfWork
-    ↓
-Django transaction rollback
-```
-
-### Success Semantics
-
-A complementary integration test modifies persisted state and leaves the Unit of Work normally.
-
-The changes survive.
-
-Therefore:
-
-```text
-successful completion
-    ↓
-leave UnitOfWork
-    ↓
-Django transaction commit
-```
-
-The success test passed immediately because `transaction.atomic()` already provided the required behavior.
-
-No artificial RED was created.
-
----
-
-## Rejected / Superseded Alternatives
-
-### Repository Persistence as the Operation Boundary
-
-Rejected because `remember(order)` describes preservation of one aggregate, not completion of an entire application operation.
-
-### Separate Repository and Committer
-
-Introduced temporarily and later superseded.
-
-It made operation completion explicit but could not guarantee that repository operations and commit belonged to the same persistence boundary.
-
-### Explicit `UnitOfWork.commit()`
-
-Introduced during discovery and later removed.
-
-Once scope-based semantics were mapped to Django's `transaction.atomic()`, an explicit `commit()` became ceremonial rather than behavioral.
-
-Keeping it would make the abstraction less truthful.
-
-### Let Django Define the Transaction Boundary
+### Treat `remember()` as the Operation Boundary
 
 Rejected.
 
-Django knows how to execute a transaction but does not know what constitutes the `Place Order` application operation.
+`remember(order)` means that an `Order` should be preserved.
 
-Allowing infrastructure to determine the business-operation boundary would reverse the intended dependency direction.
+It does not express completion of all persistence work belonging to an Application operation.
 
----
+Equating aggregate persistence with operation completion would make the boundary depend on one repository call.
 
-## Final Architecture
+### Separate `OrderRepository` and `Committer`
 
-```text
-                 place_order()
-                       |
-                       | defines
-                       v
-              one application operation
-                       |
-                       v
-                with UnitOfWork
-                       |
-               +-------+-------+
-               |               |
-          load Order      preserve Order
-               |               |
-               v               |
-        domain behavior        |
-               |               |
-               +-------+-------+
-                       |
-                       v
-                  leave scope
-                  /         \
-             success       exception
-                |              |
-                v              v
-             persist        rollback
+Introduced temporarily but superseded.
+
+A separate `Committer` made operation completion explicit, but nothing guaranteed that it controlled the same persistence context as the repository.
+
+The intermediate abstraction was useful because it exposed the need for a stronger boundary.
+
+### Explicit `UnitOfWork.commit()`
+
+Introduced during discovery but not retained in the final contract.
+
+Once the Unit of Work became a context manager and the Django implementation used `transaction.atomic()`, successful transaction completion occurred when the scope exited normally.
+
+The Django adapter therefore temporarily required a `commit()` method that performed no work:
+
+```python
+def commit(self) -> None:
+    pass
 ```
 
-Dependency direction:
+Keeping that method would make the Application-facing abstraction imply behavior that the adapter did not actually perform.
+
+The final Unit of Work therefore uses scope completion rather than an explicit `commit()` call.
+
+### Let Django Define the Transaction Scope
+
+Rejected.
+
+Django can provide transaction mechanics, but it does not own the meaning of the Application use case.
+
+The persistence technology should enforce the boundary rather than determine it.
+
+## Consequences
+
+`place_order()` now executes all persistence work inside one explicit Unit of Work scope.
+
+The repository used by the operation belongs to that Unit of Work rather than being supplied independently.
+
+The Application remains independent of Django:
 
 ```text
 Application
@@ -428,114 +213,39 @@ DjangoUnitOfWork
 transaction.atomic()
 ```
 
-The Application defines **what belongs to one operation**.
+The Django adapter provides real transaction semantics.
 
-The Unit of Work port expresses that requirement without depending on Django.
+If work inside the Unit of Work fails with an exception, changes performed during that operation do not survive.
 
-The Django adapter defines **how that operation becomes atomic**.
+If the Unit of Work completes successfully, the changes are preserved.
 
----
+The success behavior required no additional implementation after `transaction.atomic()` was introduced because Django already provided the required semantics.
 
-## Architectural Principle
+The final tests therefore verify observable persistence behavior rather than an internal `committed` flag.
 
-A transaction and a business operation are related, but they are not the same concept.
+## What We Are Not Introducing
 
-A transaction is a technical persistence mechanism.
+This decision does not introduce:
 
-A business operation belongs to the Application language.
+- Domain Events,
+- an Event Bus,
+- asynchronous processing,
+- multiple aggregates participating in `Place Order`,
+- payment transactions,
+- inventory reservations,
+- a generic transaction manager,
+- a generic repository registry,
+- a production in-memory Unit of Work,
+- framework transaction logic inside the Application layer.
 
-`transaction.atomic()` cannot know where `Place Order` begins and ends.
+Those concepts require their own pressure before being added.
 
-`place_order()` can.
+## Principle
 
-Therefore:
+A business operation and a database transaction are related, but they are not the same abstraction.
 
-> **The Application defines the boundary. Infrastructure enforces it.**
+The Application knows what work belongs to `Place Order`.
 
----
+The persistence adapter knows how to make that work atomic using its underlying technology.
 
-## TDD / Discovery Notes
-
-Chapter 14 did not begin by deciding to implement the Unit of Work pattern.
-
-The architecture emerged through successive pressure:
-
-```text
-OrderRepository
-       |
-       v
-Saving an Order does not express operation completion
-       |
-       v
-Repository + Committer
-       |
-       v
-Those collaborators may belong to different boundaries
-       |
-       v
-UnitOfWork
-       |
-       v
-Having a UnitOfWork object does not define its lifetime
-       |
-       v
-Application-owned UnitOfWork scope
-       |
-       v
-Explicit commit becomes redundant with real Django semantics
-       |
-       v
-Scope-based UnitOfWork
-       |
-       v
-Django transaction.atomic()
-       |
-       +--> success   -> persist
-       |
-       +--> exception -> rollback
-```
-
-The `Committer` therefore should not be considered a failed design.
-
-It was a useful intermediate model that exposed the next architectural question.
-
-Likewise, not every test needed to fail first. The successful Django transaction test passed immediately because the already-selected infrastructure mechanism provided that behavior.
-
-The governing principle remains:
-
-> **No pattern without pressure.**
-
-That does not mean manufacturing pain or artificial RED tests. It means that every architectural decision should have an observable reason for existing.
-
----
-
-## Verification
-
-At the Chapter 14 implementation checkpoint:
-
-- Unit of Work scope is owned by the Application.
-- Failed Django Unit of Work changes are rolled back.
-- Successful Django Unit of Work changes are preserved.
-- Previous Domain and persistence behavior remains intact.
-- Full test suite: **50 passed**.
-
-The working tree was clean after the Chapter 14 implementation commit.
-
----
-
-## Chapter 14 Outcome
-
-Chapter 14 began with a repository and a seemingly complete `place_order()` use case.
-
-It ends with a clear distinction between:
-
-- changing an aggregate,
-- preserving an aggregate,
-- defining an application operation,
-- and enforcing that operation atomically.
-
-The Unit of Work earned its place because the Application needed a name and a boundary for persistence work that belongs together.
-
-The resulting rule is simple:
-
-> **The Application decides what one operation is. The adapter makes that operation atomic.**
+**The Application defines the boundary. Infrastructure enforces it.**
