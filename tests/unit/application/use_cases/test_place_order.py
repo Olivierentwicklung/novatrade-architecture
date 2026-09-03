@@ -107,3 +107,32 @@ def test_application_places_order_at_supplied_time() -> None:
     placed_order = orders.get(order.id)
 
     assert placed_order.placed_at == placed_at
+
+
+class SpyCommitter:
+    def __init__(self) -> None:
+        self.committed = False
+
+    def commit(self) -> None:
+        self.committed = True
+
+
+def test_placing_order_commits_the_application_operation() -> None:
+    orders = InMemoryOrderRepository()
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+    orders.remember(order)
+
+    committer = SpyCommitter()
+
+    place_order(
+        order_id=order.id,
+        orders=orders,
+        placed_at=PLACED_AT,
+        committer=committer,
+    )
+
+    assert committer.committed
