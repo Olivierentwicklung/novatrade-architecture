@@ -35,6 +35,15 @@ class FakeWork:
     def __init__(self, orders: OrderRepository) -> None:
         self.orders = orders
         self.committed = False
+        self.entered = False
+        self.exited = False
+
+    def __enter__(self) -> "FakeWork":
+        self.entered = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.exited = True
 
     def commit(self) -> None:
         self.committed = True
@@ -169,3 +178,24 @@ def test_placing_order_uses_one_persistence_boundary() -> None:
 
     assert placed_order.status is OrderStatus.PLACED
     assert work.committed
+
+
+def test_placing_order_runs_inside_unit_of_work() -> None:
+    orders = InMemoryOrderRepository()
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+    orders.remember(order)
+
+    work = FakeWork(orders)
+
+    place_order(
+        order_id=order.id,
+        work=work,
+        placed_at=PLACED_AT,
+    )
+
+    assert work.entered
+    assert work.exited
