@@ -17,6 +17,32 @@ PLACED_AT = datetime(
 )
 
 
+class SpyOrders:
+    def __init__(self, order: Order) -> None:
+        self.order = order
+        self.remembered_order: Order | None = None
+
+    def get(self, order_id: UUID) -> Order:
+        assert order_id == self.order.id
+        return self.order
+
+    def remember(self, order: Order) -> None:
+        self.remembered_order = order
+
+
+class SpyCommitter:
+    def __init__(self) -> None:
+        self.committed = False
+
+    def commit(self) -> None:
+        self.committed = True
+
+
+class FakeCommitter:
+    def commit(self) -> None:
+        pass
+
+
 def test_application_cannot_place_empty_order() -> None:
     orders = InMemoryOrderRepository()
     order = Order()
@@ -27,6 +53,7 @@ def test_application_cannot_place_empty_order() -> None:
             order_id=order.id,
             orders=orders,
             placed_at=PLACED_AT,
+            committer=FakeCommitter(),
         )
 
 
@@ -43,24 +70,12 @@ def test_application_can_place_remembered_order_by_identity() -> None:
         order_id=order.id,
         orders=orders,
         placed_at=PLACED_AT,
+        committer=FakeCommitter(),
     )
 
     placed_order = orders.get(order.id)
 
     assert placed_order.status is OrderStatus.PLACED
-
-
-class SpyOrders:
-    def __init__(self, order: Order) -> None:
-        self.order = order
-        self.remembered_order: Order | None = None
-
-    def get(self, order_id: UUID) -> Order:
-        assert order_id == self.order.id
-        return self.order
-
-    def remember(self, order: Order) -> None:
-        self.remembered_order = order
 
 
 def test_placed_order_is_remembered() -> None:
@@ -75,6 +90,7 @@ def test_placed_order_is_remembered() -> None:
         order_id=order.id,
         orders=orders,
         placed_at=PLACED_AT,
+        committer=FakeCommitter(),
     )
 
     assert orders.remembered_order == order
@@ -102,19 +118,12 @@ def test_application_places_order_at_supplied_time() -> None:
         order_id=order.id,
         orders=orders,
         placed_at=placed_at,
+        committer=FakeCommitter(),
     )
 
     placed_order = orders.get(order.id)
 
     assert placed_order.placed_at == placed_at
-
-
-class SpyCommitter:
-    def __init__(self) -> None:
-        self.committed = False
-
-    def commit(self) -> None:
-        self.committed = True
 
 
 def test_placing_order_commits_the_application_operation() -> None:
