@@ -1,4 +1,5 @@
 from dataclasses import FrozenInstanceError
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -392,3 +393,23 @@ def test_orders_with_same_contents_but_different_identities_are_not_equal() -> N
     )
 
     assert first_order != second_order
+
+
+def test_placing_order_records_when_it_was_placed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+    placed_at = datetime(
+        2026,
+        9,
+        3,
+        9,
+        30,
+        tzinfo=timezone.utc,
+    )
+
+    order.place(placed_at)
+
+    assert order.placed_at == placed_at
