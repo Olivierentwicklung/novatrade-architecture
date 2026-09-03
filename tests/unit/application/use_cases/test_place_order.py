@@ -44,15 +44,16 @@ def test_application_cannot_place_empty_order() -> None:
     orders = InMemoryOrderRepository()
     order = Order()
     orders.remember(order)
+    work = FakeWork(orders)
 
     with pytest.raises(CannotPlaceEmptyOrder):
-        work = FakeWork(orders)
-
         place_order(
             order_id=order.id,
             work=work,
             placed_at=PLACED_AT,
         )
+
+    assert not work.committed
 
 
 def test_application_can_place_remembered_order_by_identity() -> None:
