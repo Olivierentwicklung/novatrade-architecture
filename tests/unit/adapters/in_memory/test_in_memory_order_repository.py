@@ -15,3 +15,18 @@ def test_remembered_order_can_be_retrieved_by_identity() -> None:
     retrieved_order = orders.get(order.id)
 
     assert retrieved_order == order
+
+
+def test_changes_are_not_preserved_until_order_is_remembered_again() -> None:
+    repository = InMemoryOrderRepository()
+    order = Order()
+    repository.remember(order)
+
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    retrieved_order = repository.get(order.id)
+
+    assert retrieved_order.quantity_for("BOOK-123") == 0
