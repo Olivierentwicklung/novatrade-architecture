@@ -1,5 +1,6 @@
 from dataclasses import FrozenInstanceError
-from uuid import uuid4
+from datetime import datetime, timezone
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -16,12 +17,21 @@ from novatrade.domain.order import (
 )
 from novatrade.domain.quantity import InvalidQuantity, Quantity
 
+PLACED_AT = datetime(
+    2026,
+    9,
+    3,
+    9,
+    30,
+    tzinfo=timezone.utc,
+)
+
 
 def test_empty_order_cannot_be_placed():
     order = Order()
 
     with pytest.raises(CannotPlaceEmptyOrder):
-        order.place()
+        order.place(PLACED_AT)
 
 
 def test_product_can_be_added_to_order():
@@ -146,7 +156,7 @@ def test_product_cannot_be_added_after_order_is_placed() -> None:
         quantity=2,
     )
 
-    order.place()
+    order.place(PLACED_AT)
 
     with pytest.raises(CannotModifyPlacedOrder):
         order.add_product(
@@ -163,7 +173,7 @@ def test_product_quantity_cannot_be_changed_after_order_is_placed() -> None:
         quantity=2,
     )
 
-    order.place()
+    order.place(PLACED_AT)
 
     with pytest.raises(CannotModifyPlacedOrder):
         order.change_quantity(
@@ -213,7 +223,7 @@ def test_product_cannot_be_removed_after_order_is_placed() -> None:
         quantity=2,
     )
 
-    order.place()
+    order.place(PLACED_AT)
 
     with pytest.raises(CannotModifyPlacedOrder):
         order.remove_product(
@@ -227,7 +237,7 @@ def test_placed_order_can_be_confirmed() -> None:
         product_id="BOOK-123",
         quantity=2,
     )
-    order.place()
+    order.place(PLACED_AT)
 
     order.confirm()
 
@@ -251,7 +261,7 @@ def test_placed_order_can_be_cancelled() -> None:
         product_id="BOOK-123",
         quantity=2,
     )
-    order.place()
+    order.place(PLACED_AT)
 
     order.cancel()
 
@@ -275,7 +285,7 @@ def test_confirmed_order_cannot_be_cancelled() -> None:
         product_id="BOOK-123",
         quantity=2,
     )
-    order.place()
+    order.place(PLACED_AT)
     order.confirm()
 
     with pytest.raises(CannotCancelConfirmedOrder):
@@ -295,7 +305,7 @@ def test_placing_order_changes_status_to_placed() -> None:
         quantity=2,
     )
 
-    order.place()
+    order.place(PLACED_AT)
 
     assert order.status is OrderStatus.PLACED
 
@@ -306,7 +316,7 @@ def test_confirming_order_changes_status_to_confirmed() -> None:
         product_id="BOOK-123",
         quantity=2,
     )
-    order.place()
+    order.place(PLACED_AT)
 
     order.confirm()
 
@@ -319,7 +329,7 @@ def test_cancelling_order_changes_status_to_cancelled() -> None:
         product_id="BOOK-123",
         quantity=2,
     )
-    order.place()
+    order.place(PLACED_AT)
 
     order.cancel()
 
@@ -332,7 +342,7 @@ def test_cancelled_order_cannot_be_cancelled_again() -> None:
         product_id="BOOK-123",
         quantity=2,
     )
-    order.place()
+    order.place(PLACED_AT)
     order.cancel()
 
     with pytest.raises(CannotCancelCancelledOrder):
@@ -392,3 +402,36 @@ def test_orders_with_same_contents_but_different_identities_are_not_equal() -> N
     )
 
     assert first_order != second_order
+
+
+def test_placing_order_records_when_it_was_placed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    order.place(PLACED_AT)
+
+    assert order.placed_at == PLACED_AT
+
+
+def test_placed_order_can_be_reconstituted_without_placing_it_again() -> None:
+    order_id = UUID("12345678-1234-5678-1234-567812345678")
+
+    order = Order.reconstitute(
+        order_id=order_id,
+        status=OrderStatus.PLACED,
+        placed_at=PLACED_AT,
+        lines=(
+            OrderLine(
+                product_id="BOOK-123",
+                quantity=Quantity(2),
+            ),
+        ),
+    )
+
+    assert order.id == order_id
+    assert order.status is OrderStatus.PLACED
+    assert order.placed_at == PLACED_AT
+    assert order.quantity_for("BOOK-123") == 2

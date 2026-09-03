@@ -1,4 +1,4 @@
-from novatrade.application.in_memory_order_repository import InMemoryOrderRepository
+from novatrade.adapters.in_memory.order_repository import InMemoryOrderRepository
 from novatrade.domain.order import Order
 
 

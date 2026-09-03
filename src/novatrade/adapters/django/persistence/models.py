@@ -6,6 +6,7 @@ class OrderRecord(models.Model):
 
     id = models.UUIDField(primary_key=True)
     status = models.CharField(max_length=20)
+    placed_at = models.DateTimeField(null=True)
 
 
 class OrderLineRecord(models.Model):

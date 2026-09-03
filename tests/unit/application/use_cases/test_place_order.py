@@ -1,10 +1,20 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 import pytest
 
-from novatrade.application.in_memory_order_repository import InMemoryOrderRepository
-from novatrade.application.place_order import place_order
+from novatrade.adapters.in_memory.order_repository import InMemoryOrderRepository
+from novatrade.application.use_cases.place_order import place_order
 from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderStatus
+
+PLACED_AT = datetime(
+    2026,
+    9,
+    3,
+    9,
+    30,
+    tzinfo=timezone.utc,
+)
 
 
 def test_application_cannot_place_empty_order() -> None:
@@ -16,6 +26,7 @@ def test_application_cannot_place_empty_order() -> None:
         place_order(
             order_id=order.id,
             orders=orders,
+            placed_at=PLACED_AT,
         )
 
 
@@ -31,6 +42,7 @@ def test_application_can_place_remembered_order_by_identity() -> None:
     place_order(
         order_id=order.id,
         orders=orders,
+        placed_at=PLACED_AT,
     )
 
     assert order.status is OrderStatus.PLACED
@@ -60,6 +72,34 @@ def test_placed_order_is_remembered() -> None:
     place_order(
         order_id=order.id,
         orders=orders,
+        placed_at=PLACED_AT,
     )
 
     assert orders.remembered_order == order
+
+
+def test_application_places_order_at_supplied_time() -> None:
+    orders = InMemoryOrderRepository()
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    orders.remember(order)
+
+    placed_at = datetime(
+        2026,
+        9,
+        3,
+        9,
+        30,
+        tzinfo=timezone.utc,
+    )
+
+    place_order(
+        order_id=order.id,
+        orders=orders,
+        placed_at=placed_at,
+    )
+
+    assert order.placed_at == placed_at
