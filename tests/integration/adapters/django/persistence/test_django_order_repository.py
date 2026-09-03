@@ -1,9 +1,20 @@
+from datetime import datetime, timezone
+
 import pytest
 
 from novatrade.adapters.django.persistence.repository import (
     DjangoOrderRepository,
 )
 from novatrade.domain.order import Order
+
+PLACED_AT = datetime(
+    2026,
+    9,
+    3,
+    9,
+    30,
+    tzinfo=timezone.utc,
+)
 
 
 @pytest.mark.django_db
@@ -15,7 +26,7 @@ def test_order_can_be_preserved_and_retrieved_by_identity() -> None:
         quantity=2,
     )
 
-    order.place()
+    order.place(PLACED_AT)
 
     repository.remember(order)
 
@@ -24,3 +35,4 @@ def test_order_can_be_preserved_and_retrieved_by_identity() -> None:
     assert retrieved_order.id == order.id
     assert retrieved_order.status == order.status
     assert retrieved_order.quantity_for("BOOK-123") == 2
+    assert retrieved_order.placed_at == PLACED_AT
