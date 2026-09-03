@@ -4,6 +4,7 @@ from uuid import UUID
 import pytest
 
 from novatrade.adapters.in_memory.order_repository import InMemoryOrderRepository
+from novatrade.application.ports.order_repository import OrderRepository
 from novatrade.application.use_cases.place_order import place_order
 from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderStatus
 
@@ -30,21 +31,8 @@ class SpyOrders:
         self.remembered_order = order
 
 
-class SpyCommitter:
-    def __init__(self) -> None:
-        self.committed = False
-
-    def commit(self) -> None:
-        self.committed = True
-
-
-class FakeCommitter:
-    def commit(self) -> None:
-        pass
-
-
 class FakeWork:
-    def __init__(self, orders: InMemoryOrderRepository) -> None:
+    def __init__(self, orders: OrderRepository) -> None:
         self.orders = orders
         self.committed = False
 
@@ -58,11 +46,12 @@ def test_application_cannot_place_empty_order() -> None:
     orders.remember(order)
 
     with pytest.raises(CannotPlaceEmptyOrder):
+        work = FakeWork(orders)
+
         place_order(
             order_id=order.id,
-            orders=orders,
+            work=work,
             placed_at=PLACED_AT,
-            committer=FakeCommitter(),
         )
 
 
@@ -75,11 +64,12 @@ def test_application_can_place_remembered_order_by_identity() -> None:
     )
     orders.remember(order)
 
+    work = FakeWork(orders)
+
     place_order(
         order_id=order.id,
-        orders=orders,
+        work=work,
         placed_at=PLACED_AT,
-        committer=FakeCommitter(),
     )
 
     placed_order = orders.get(order.id)
@@ -95,11 +85,12 @@ def test_placed_order_is_remembered() -> None:
     )
     orders = SpyOrders(order)
 
+    work = FakeWork(orders)
+
     place_order(
         order_id=order.id,
-        orders=orders,
+        work=work,
         placed_at=PLACED_AT,
-        committer=FakeCommitter(),
     )
 
     assert orders.remembered_order == order
@@ -123,11 +114,12 @@ def test_application_places_order_at_supplied_time() -> None:
         tzinfo=timezone.utc,
     )
 
+    work = FakeWork(orders)
+
     place_order(
         order_id=order.id,
-        orders=orders,
-        placed_at=placed_at,
-        committer=FakeCommitter(),
+        work=work,
+        placed_at=PLACED_AT,
     )
 
     placed_order = orders.get(order.id)
@@ -144,16 +136,15 @@ def test_placing_order_commits_the_application_operation() -> None:
     )
     orders.remember(order)
 
-    committer = SpyCommitter()
+    work = FakeWork(orders)
 
     place_order(
         order_id=order.id,
-        orders=orders,
+        work=work,
         placed_at=PLACED_AT,
-        committer=committer,
     )
 
-    assert committer.committed
+    assert work.committed
 
 
 def test_placing_order_uses_one_persistence_boundary() -> None:

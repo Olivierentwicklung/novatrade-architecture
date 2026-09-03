@@ -1,18 +1,16 @@
 from datetime import datetime
 from uuid import UUID
 
-from novatrade.application.ports.committer import Committer
-from novatrade.application.ports.order_repository import OrderRepository
+from novatrade.application.ports.unit_of_work import UnitOfWork
 
 
 def place_order(
     order_id: UUID,
-    orders: OrderRepository,
+    work: UnitOfWork,
     placed_at: datetime,
-    committer: Committer,
 ) -> None:
     """Place and preserve the Order with the given identity."""
-    order = orders.get(order_id)
+    order = work.orders.get(order_id)
     order.place(placed_at)
-    orders.remember(order)
-    committer.commit()
+    work.orders.remember(order)
+    work.commit()
