@@ -43,6 +43,15 @@ class FakeCommitter:
         pass
 
 
+class FakeWork:
+    def __init__(self, orders: InMemoryOrderRepository) -> None:
+        self.orders = orders
+        self.committed = False
+
+    def commit(self) -> None:
+        self.committed = True
+
+
 def test_application_cannot_place_empty_order() -> None:
     orders = InMemoryOrderRepository()
     order = Order()
@@ -145,3 +154,26 @@ def test_placing_order_commits_the_application_operation() -> None:
     )
 
     assert committer.committed
+
+
+def test_placing_order_uses_one_persistence_boundary() -> None:
+    orders = InMemoryOrderRepository()
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+    orders.remember(order)
+
+    work = FakeWork(orders)
+
+    place_order(
+        order_id=order.id,
+        work=work,
+        placed_at=PLACED_AT,
+    )
+
+    placed_order = work.orders.get(order.id)
+
+    assert placed_order.status is OrderStatus.PLACED
+    assert work.committed
