@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from novatrade.application.order_repository import OrderRepository
+from novatrade.application.ports.order_repository import OrderRepository
 
 
 def place_order(order_id: UUID, orders: OrderRepository) -> None:
