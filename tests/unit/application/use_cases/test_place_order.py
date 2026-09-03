@@ -45,7 +45,9 @@ def test_application_can_place_remembered_order_by_identity() -> None:
         placed_at=PLACED_AT,
     )
 
-    assert order.status is OrderStatus.PLACED
+    placed_order = orders.get(order.id)
+
+    assert placed_order.status is OrderStatus.PLACED
 
 
 class SpyOrders:
@@ -102,4 +104,6 @@ def test_application_places_order_at_supplied_time() -> None:
         placed_at=placed_at,
     )
 
-    assert order.placed_at == placed_at
+    placed_order = orders.get(order.id)
+
+    assert placed_order.placed_at == placed_at
