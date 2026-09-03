@@ -7,6 +7,15 @@ from novatrade.adapters.in_memory.order_repository import InMemoryOrderRepositor
 from novatrade.application.use_cases.place_order import place_order
 from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderStatus
 
+PLACED_AT = datetime(
+    2026,
+    9,
+    3,
+    9,
+    30,
+    tzinfo=timezone.utc,
+)
+
 
 def test_application_cannot_place_empty_order() -> None:
     orders = InMemoryOrderRepository()
@@ -17,6 +26,7 @@ def test_application_cannot_place_empty_order() -> None:
         place_order(
             order_id=order.id,
             orders=orders,
+            placed_at=PLACED_AT,
         )
 
 
@@ -32,6 +42,7 @@ def test_application_can_place_remembered_order_by_identity() -> None:
     place_order(
         order_id=order.id,
         orders=orders,
+        placed_at=PLACED_AT,
     )
 
     assert order.status is OrderStatus.PLACED
@@ -61,6 +72,7 @@ def test_placed_order_is_remembered() -> None:
     place_order(
         order_id=order.id,
         orders=orders,
+        placed_at=PLACED_AT,
     )
 
     assert orders.remembered_order == order

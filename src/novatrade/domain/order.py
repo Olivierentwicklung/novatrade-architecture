@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -54,11 +55,27 @@ class Order:
         self.id = order_id if order_id is not None else uuid4()
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
+        self.placed_at: datetime | None = None
 
     @property
     def lines(self) -> tuple[OrderLine, ...]:
         """Return the Order Lines without exposing the mutable collection."""
         return tuple(self._lines)
+
+    @classmethod
+    def reconstitute(
+        cls,
+        order_id: UUID,
+        status: OrderStatus,
+        placed_at: datetime | None,
+        lines: tuple[OrderLine, ...],
+    ) -> "Order":
+        """Reconstitute an existing Order from its historical state."""
+        order = cls(order_id=order_id)
+        order._lines = list(lines)
+        order.status = status
+        order.placed_at = placed_at
+        return order
 
     def __eq__(self, other: object) -> bool:
         """Compare Orders by their identity."""
@@ -112,12 +129,12 @@ class Order:
 
         return None
 
-    def place(self) -> None:
-        """Place the Order or reject it when it is empty."""
+    def place(self, placed_at: datetime) -> None:
+        """Place the Order at the given time or reject it when it is empty."""
         if not self._lines:
             raise CannotPlaceEmptyOrder
-
         self.status = OrderStatus.PLACED
+        self.placed_at = placed_at
 
     def remove_product(self, product_id: str) -> None:
         """Remove a Product from the Order."""
