@@ -1,3 +1,4 @@
+from types import TracebackType
 from typing import Protocol
 
 from novatrade.application.ports.order_repository import OrderRepository
@@ -11,6 +12,15 @@ class UnitOfWork(Protocol):
         """Provide access to Orders participating in this operation."""
         ...
 
-    def commit(self) -> None:
-        """Commit the work performed by the application operation."""
+    def __enter__(self) -> "UnitOfWork":
+        """Begin the persistence boundary for the operation."""
+        ...
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        """End the persistence boundary for the operation."""
         ...

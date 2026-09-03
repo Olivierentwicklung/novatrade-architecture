@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from types import TracebackType
 from uuid import UUID
 
 import pytest
@@ -34,7 +35,6 @@ class SpyOrders:
 class FakeWork:
     def __init__(self, orders: OrderRepository) -> None:
         self.orders = orders
-        self.committed = False
         self.entered = False
         self.exited = False
 
@@ -42,11 +42,13 @@ class FakeWork:
         self.entered = True
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         self.exited = True
-
-    def commit(self) -> None:
-        self.committed = True
 
 
 def test_application_cannot_place_empty_order() -> None:
@@ -61,8 +63,6 @@ def test_application_cannot_place_empty_order() -> None:
             work=work,
             placed_at=PLACED_AT,
         )
-
-    assert not work.committed
 
 
 def test_application_can_place_remembered_order_by_identity() -> None:
@@ -137,26 +137,6 @@ def test_application_places_order_at_supplied_time() -> None:
     assert placed_order.placed_at == placed_at
 
 
-def test_placing_order_commits_the_application_operation() -> None:
-    orders = InMemoryOrderRepository()
-    order = Order()
-    order.add_product(
-        product_id="BOOK-123",
-        quantity=1,
-    )
-    orders.remember(order)
-
-    work = FakeWork(orders)
-
-    place_order(
-        order_id=order.id,
-        work=work,
-        placed_at=PLACED_AT,
-    )
-
-    assert work.committed
-
-
 def test_placing_order_uses_one_persistence_boundary() -> None:
     orders = InMemoryOrderRepository()
     order = Order()
@@ -177,7 +157,6 @@ def test_placing_order_uses_one_persistence_boundary() -> None:
     placed_order = work.orders.get(order.id)
 
     assert placed_order.status is OrderStatus.PLACED
-    assert work.committed
 
 
 def test_placing_order_runs_inside_unit_of_work() -> None:

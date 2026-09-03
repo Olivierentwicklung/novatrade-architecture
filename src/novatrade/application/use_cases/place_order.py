@@ -10,7 +10,7 @@ def place_order(
     placed_at: datetime,
 ) -> None:
     """Place and preserve the Order with the given identity."""
-    order = work.orders.get(order_id)
-    order.place(placed_at)
-    work.orders.remember(order)
-    work.commit()
+    with work:
+        order = work.orders.get(order_id)
+        order.place(placed_at)
+        work.orders.remember(order)
