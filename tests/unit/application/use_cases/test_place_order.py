@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 import pytest
@@ -63,3 +64,30 @@ def test_placed_order_is_remembered() -> None:
     )
 
     assert orders.remembered_order == order
+
+
+def test_application_places_order_at_supplied_time() -> None:
+    orders = InMemoryOrderRepository()
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+    orders.remember(order)
+
+    placed_at = datetime(
+        2026,
+        9,
+        3,
+        9,
+        30,
+        tzinfo=timezone.utc,
+    )
+
+    place_order(
+        order_id=order.id,
+        orders=orders,
+        placed_at=placed_at,
+    )
+
+    assert order.placed_at == placed_at
