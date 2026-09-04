@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
+from novatrade.domain.events import OrderPlaced
 from novatrade.domain.quantity import Quantity
 
 
@@ -56,11 +57,17 @@ class Order:
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
         self.placed_at: datetime | None = None
+        self._events: list[OrderPlaced] = []
 
     @property
     def lines(self) -> tuple[OrderLine, ...]:
         """Return the Order Lines without exposing the mutable collection."""
         return tuple(self._lines)
+
+    @property
+    def events(self) -> tuple[OrderPlaced, ...]:
+        """Return facts recorded when this Order was placed."""
+        return tuple(self._events)
 
     @classmethod
     def reconstitute(
@@ -133,8 +140,15 @@ class Order:
         """Place the Order at the given time or reject it when it is empty."""
         if not self._lines:
             raise CannotPlaceEmptyOrder
+
         self.status = OrderStatus.PLACED
         self.placed_at = placed_at
+        self._events.append(
+            OrderPlaced(
+                order_id=self.id,
+                placed_at=placed_at,
+            )
+        )
 
     def remove_product(self, product_id: str) -> None:
         """Remove a Product from the Order."""
@@ -170,3 +184,9 @@ class Order:
             raise CannotCancelCancelledOrder
 
         self.status = OrderStatus.CANCELLED
+
+    def collect_events(self) -> tuple[OrderPlaced, ...]:
+        """Return and clear Domain Events recorded by this Order."""
+        events = tuple(self._events)
+        self._events.clear()
+        return events

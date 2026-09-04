@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from novatrade.domain.events import OrderPlaced
 from novatrade.domain.order import (
     CannotCancelCancelledOrder,
     CannotCancelConfirmedOrder,
@@ -435,3 +436,99 @@ def test_placed_order_can_be_reconstituted_without_placing_it_again() -> None:
     assert order.status is OrderStatus.PLACED
     assert order.placed_at == PLACED_AT
     assert order.quantity_for("BOOK-123") == 2
+
+
+def test_placing_order_records_that_order_was_placed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order.place(placed_at)
+
+    assert order.events == (
+        OrderPlaced(
+            order_id=order.id,
+            placed_at=placed_at,
+        ),
+    )
+
+
+def test_recorded_placement_fact_has_business_meaning() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order.place(placed_at)
+
+    placement = order.events[0]
+
+    assert placement.order_id == order.id
+    assert placement.placed_at == placed_at
+
+
+def test_reconstituting_placed_order_does_not_record_new_placement_fact() -> None:
+    order_id = uuid4()
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order = Order.reconstitute(
+        order_id=order_id,
+        status=OrderStatus.PLACED,
+        placed_at=placed_at,
+        lines=(
+            OrderLine(
+                product_id="BOOK-123",
+                quantity=Quantity(1),
+            ),
+        ),
+    )
+
+    assert order.events == ()
+
+
+def test_placing_order_records_domain_event() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order.place(placed_at)
+
+    assert order.events == (
+        OrderPlaced(
+            order_id=order.id,
+            placed_at=placed_at,
+        ),
+    )
+
+
+def test_recorded_domain_events_can_be_collected() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order.place(placed_at)
+
+    events = order.collect_events()
+
+    assert events == (
+        OrderPlaced(
+            order_id=order.id,
+            placed_at=placed_at,
+        ),
+    )
+    assert order.events == ()
