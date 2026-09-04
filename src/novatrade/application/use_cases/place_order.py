@@ -10,9 +10,15 @@ def place_order(
     work: UnitOfWork,
     placed_at: datetime,
 ) -> tuple[OrderPlaced, ...]:
-    """Place and preserve the Order, returning its produced Domain Events."""
+    """Place and preserve the Order and the Domain Events it produces."""
     with work:
         order = work.orders.get(order_id)
         order.place(placed_at)
         work.orders.remember(order)
-        return order.collect_events()
+
+        events = order.collect_events()
+
+        for event in events:
+            work.events.remember(event)
+
+        return events
