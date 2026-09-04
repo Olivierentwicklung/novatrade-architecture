@@ -1,6 +1,7 @@
 from types import TracebackType
 from typing import Protocol
 
+from novatrade.application.ports.event_repository import EventRepository
 from novatrade.application.ports.order_repository import OrderRepository
 
 
@@ -23,4 +24,9 @@ class UnitOfWork(Protocol):
         traceback: TracebackType | None,
     ) -> bool | None:
         """End the persistence boundary for the operation."""
+        ...
+
+    @property
+    def events(self) -> EventRepository:
+        """Provide access to Domain Events participating in this operation."""
         ...

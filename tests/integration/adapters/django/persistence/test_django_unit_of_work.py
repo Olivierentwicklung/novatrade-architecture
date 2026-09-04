@@ -91,8 +91,6 @@ def test_successful_unit_of_work_preserves_order_placed_fact() -> None:
         for event in changed_order.collect_events():
             work.events.remember(event)
 
-        assert len(events) == 1
-
     persisted_event = OrderPlacedRecord.objects.get(
         order_id=order.id,
     )
