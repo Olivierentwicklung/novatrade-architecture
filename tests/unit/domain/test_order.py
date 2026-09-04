@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from novatrade.domain.events import OrderPlaced
 from novatrade.domain.order import (
     CannotCancelCancelledOrder,
     CannotCancelConfirmedOrder,
@@ -490,3 +491,22 @@ def test_reconstituting_placed_order_does_not_record_new_placement_fact() -> Non
     )
 
     assert order.placed_events == ()
+
+
+def test_placing_order_records_domain_event() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order.place(placed_at)
+
+    assert order.events == (
+        OrderPlaced(
+            order_id=order.id,
+            placed_at=placed_at,
+        ),
+    )
