@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from novatrade.application.event_dispatcher import EventDispatcher
-
 from novatrade.domain.events import OrderPlaced
 
 PLACED_AT = datetime(
