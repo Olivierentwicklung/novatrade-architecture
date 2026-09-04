@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
+from novatrade.domain.events import OrderPlaced
 from novatrade.domain.quantity import Quantity
 
 
@@ -56,7 +57,7 @@ class Order:
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
         self.placed_at: datetime | None = None
-        self._placed_events: list[dict[str, object]] = []
+        self._placed_events: list[OrderPlaced] = []
 
     @property
     def lines(self) -> tuple[OrderLine, ...]:
@@ -64,7 +65,7 @@ class Order:
         return tuple(self._lines)
 
     @property
-    def placed_events(self) -> tuple[dict[str, object], ...]:
+    def placed_events(self) -> tuple[OrderPlaced, ...]:
         """Return facts recorded when this Order was placed."""
         return tuple(self._placed_events)
 
@@ -143,10 +144,10 @@ class Order:
         self.status = OrderStatus.PLACED
         self.placed_at = placed_at
         self._placed_events.append(
-            {
-                "order_id": self.id,
-                "placed_at": placed_at,
-            }
+            OrderPlaced(
+                order_id=self.id,
+                placed_at=placed_at,
+            )
         )
 
     def remove_product(self, product_id: str) -> None:
