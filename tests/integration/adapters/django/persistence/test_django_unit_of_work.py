@@ -1,8 +1,20 @@
+from datetime import datetime, timezone
+
 import pytest
 
+from novatrade.adapters.django.persistence.models import OrderPlacedRecord
 from novatrade.adapters.django.persistence.repository import DjangoOrderRepository
 from novatrade.adapters.django.persistence.unit_of_work import DjangoUnitOfWork
 from novatrade.domain.order import Order
+
+PLACED_AT = datetime(
+    2026,
+    9,
+    4,
+    11,
+    0,
+    tzinfo=timezone.utc,
+)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -58,3 +70,30 @@ def test_successful_unit_of_work_preserves_changes() -> None:
 
     assert persisted_order.quantity_for("BOOK-123") == 1
     assert persisted_order.quantity_for("BOOK-456") == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_successful_unit_of_work_preserves_order_placed_fact() -> None:
+    orders = DjangoOrderRepository()
+
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+    orders.remember(order)
+
+    with DjangoUnitOfWork() as work:
+        changed_order = work.orders.get(order.id)
+        changed_order.place(PLACED_AT)
+        work.orders.remember(changed_order)
+
+        events = changed_order.collect_events()
+
+        assert len(events) == 1
+
+    persisted_event = OrderPlacedRecord.objects.get(
+        order_id=order.id,
+    )
+
+    assert persisted_event.placed_at == PLACED_AT
