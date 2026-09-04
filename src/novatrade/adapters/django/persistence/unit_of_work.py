@@ -2,7 +2,10 @@ from types import TracebackType
 
 from django.db import transaction
 
-from novatrade.adapters.django.persistence.repository import DjangoOrderRepository
+from novatrade.adapters.django.persistence.event_repository import (
+    DjangoEventRepository,
+)
+from novatrade.adapters.django.persistence.order_repository import DjangoOrderRepository
 
 
 class DjangoUnitOfWork:
@@ -11,6 +14,7 @@ class DjangoUnitOfWork:
     def __init__(self) -> None:
         self._transaction = None
         self.orders = DjangoOrderRepository()
+        self.events = DjangoEventRepository()
 
     def __enter__(self) -> "DjangoUnitOfWork":
         self._transaction = transaction.atomic()
