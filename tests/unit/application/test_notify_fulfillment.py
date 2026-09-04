@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from novatrade.application.notify_fulfillment import notify_fulfillment
-
 from novatrade.domain.events import OrderPlaced
 
 PLACED_AT = datetime(
