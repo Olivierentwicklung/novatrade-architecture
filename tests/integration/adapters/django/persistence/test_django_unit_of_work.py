@@ -88,7 +88,8 @@ def test_successful_unit_of_work_preserves_order_placed_fact() -> None:
         changed_order.place(PLACED_AT)
         work.orders.remember(changed_order)
 
-        events = changed_order.collect_events()
+        for event in changed_order.collect_events():
+            work.events.remember(event)
 
         assert len(events) == 1
 
