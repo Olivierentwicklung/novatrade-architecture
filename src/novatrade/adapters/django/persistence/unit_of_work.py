@@ -5,7 +5,7 @@ from django.db import transaction
 from novatrade.adapters.django.persistence.event_repository import (
     DjangoEventRepository,
 )
-from novatrade.adapters.django.persistence.repository import DjangoOrderRepository
+from novatrade.adapters.django.persistence.order_repository import DjangoOrderRepository
 
 
 class DjangoUnitOfWork:
