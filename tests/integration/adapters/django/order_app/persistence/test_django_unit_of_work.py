@@ -2,9 +2,13 @@ from datetime import datetime, timezone
 
 import pytest
 
-from novatrade.adapters.django.persistence.models import OrderPlacedRecord
-from novatrade.adapters.django.persistence.order_repository import DjangoOrderRepository
-from novatrade.adapters.django.persistence.unit_of_work import DjangoUnitOfWork
+from novatrade.adapters.django.order_app.models import OrderPlacedRecord
+from novatrade.adapters.django.order_app.persistence.order_repository import (
+    DjangoOrderRepository,
+)
+from novatrade.adapters.django.order_app.persistence.unit_of_work import (
+    DjangoUnitOfWork,
+)
 from novatrade.domain.order import Order, OrderStatus
 
 PLACED_AT = datetime(

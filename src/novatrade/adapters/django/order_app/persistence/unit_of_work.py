@@ -2,10 +2,12 @@ from types import TracebackType
 
 from django.db import transaction
 
-from novatrade.adapters.django.persistence.event_repository import (
+from novatrade.adapters.django.order_app.persistence.event_repository import (
     DjangoEventRepository,
 )
-from novatrade.adapters.django.persistence.order_repository import DjangoOrderRepository
+from novatrade.adapters.django.order_app.persistence.order_repository import (
+    DjangoOrderRepository,
+)
 
 
 class DjangoUnitOfWork:

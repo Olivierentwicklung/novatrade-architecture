@@ -3,7 +3,7 @@ from uuid import UUID
 from novatrade.domain.order import Order, OrderLine, OrderStatus
 from novatrade.domain.quantity import Quantity
 
-from .models import OrderLineRecord, OrderRecord
+from ..models import OrderLineRecord, OrderRecord
 
 
 class DjangoOrderRepository:

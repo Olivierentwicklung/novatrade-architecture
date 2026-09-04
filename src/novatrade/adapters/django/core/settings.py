@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "novatrade.adapters.django.persistence",
+    "novatrade.adapters.django.order_app.apps.OrderAppConfig",
 ]
 
 MIDDLEWARE = [

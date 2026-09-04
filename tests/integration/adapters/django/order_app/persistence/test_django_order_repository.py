@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from novatrade.adapters.django.persistence.order_repository import (
+from novatrade.adapters.django.order_app.persistence.order_repository import (
     DjangoOrderRepository,
 )
 from novatrade.domain.order import Order
