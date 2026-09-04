@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from novatrade.application.send_order_confirmation import send_order_confirmation
-
 from novatrade.domain.events import OrderPlaced
 
 PLACED_AT = datetime(
