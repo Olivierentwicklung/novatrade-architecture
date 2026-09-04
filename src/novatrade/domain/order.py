@@ -184,3 +184,9 @@ class Order:
             raise CannotCancelCancelledOrder
 
         self.status = OrderStatus.CANCELLED
+
+    def collect_events(self) -> tuple[OrderPlaced, ...]:
+        """Return and clear Domain Events recorded by this Order."""
+        events = tuple(self._events)
+        self._events.clear()
+        return events
