@@ -19,3 +19,10 @@ class OrderLineRecord(models.Model):
     )
     product_id = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField()
+
+
+class OrderPlacedRecord(models.Model):
+    """Persistent representation of an OrderPlaced business fact."""
+
+    order_id = models.UUIDField()
+    placed_at = models.DateTimeField()
