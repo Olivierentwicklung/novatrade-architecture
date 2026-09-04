@@ -510,3 +510,25 @@ def test_placing_order_records_domain_event() -> None:
             placed_at=placed_at,
         ),
     )
+
+
+def test_recorded_domain_events_can_be_collected() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order.place(placed_at)
+
+    events = order.collect_events()
+
+    assert events == (
+        OrderPlaced(
+            order_id=order.id,
+            placed_at=placed_at,
+        ),
+    )
+    assert order.events == ()
