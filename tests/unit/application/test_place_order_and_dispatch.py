@@ -20,9 +20,18 @@ PLACED_AT = datetime(
 )
 
 
+class FakeEvents:
+    def __init__(self) -> None:
+        self.remembered_events: list[OrderPlaced] = []
+
+    def remember(self, event: OrderPlaced) -> None:
+        self.remembered_events.append(event)
+
+
 class FakeWork:
     def __init__(self, orders: OrderRepository) -> None:
         self.orders = orders
+        self.events = FakeEvents()
 
     def __enter__(self) -> "FakeWork":
         return self
