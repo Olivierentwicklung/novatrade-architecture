@@ -33,9 +33,22 @@ class SpyOrders:
         self.remembered_order = order
 
 
+class SpyEvents:
+    def __init__(self) -> None:
+        self.remembered_events: list[OrderPlaced] = []
+
+    def remember(self, event: OrderPlaced) -> None:
+        self.remembered_events.append(event)
+
+
 class FakeWork:
-    def __init__(self, orders: OrderRepository) -> None:
+    def __init__(
+        self,
+        orders: OrderRepository,
+        events: SpyEvents | None = None,
+    ) -> None:
         self.orders = orders
+        self.events = events or SpyEvents()
         self.entered = False
         self.exited = False
 
@@ -204,3 +217,33 @@ def test_placing_order_returns_produced_domain_events() -> None:
             placed_at=PLACED_AT,
         ),
     )
+
+
+def test_placing_order_preserves_produced_domain_events() -> None:
+    orders = InMemoryOrderRepository()
+
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+    orders.remember(order)
+
+    events = SpyEvents()
+    work = FakeWork(
+        orders=orders,
+        events=events,
+    )
+
+    place_order(
+        order_id=order.id,
+        work=work,
+        placed_at=PLACED_AT,
+    )
+
+    assert events.remembered_events == [
+        OrderPlaced(
+            order_id=order.id,
+            placed_at=PLACED_AT,
+        )
+    ]
