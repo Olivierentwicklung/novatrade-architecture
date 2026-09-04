@@ -435,3 +435,22 @@ def test_placed_order_can_be_reconstituted_without_placing_it_again() -> None:
     assert order.status is OrderStatus.PLACED
     assert order.placed_at == PLACED_AT
     assert order.quantity_for("BOOK-123") == 2
+
+
+def test_placing_order_records_that_order_was_placed() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order.place(placed_at)
+
+    assert order.placed_events == (
+        {
+            "order_id": order.id,
+            "placed_at": placed_at,
+        },
+    )
