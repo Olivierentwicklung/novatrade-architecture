@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from types import TracebackType
 
+import pytest
+
 from novatrade.adapters.in_memory.order_repository import InMemoryOrderRepository
 from novatrade.application.event_dispatcher import EventDispatcher
 from novatrade.application.place_order_and_dispatch import place_order_and_dispatch
@@ -32,6 +34,16 @@ class FakeWork:
         traceback: TracebackType | None,
     ) -> None:
         pass
+
+
+class FailingWork(FakeWork):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        raise RuntimeError("commit failed")
 
 
 def test_successfully_placed_order_dispatches_its_domain_events() -> None:
@@ -69,3 +81,36 @@ def test_successfully_placed_order_dispatches_its_domain_events() -> None:
             placed_at=PLACED_AT,
         )
     ]
+
+
+def test_failed_unit_of_work_does_not_dispatch_domain_events() -> None:
+    orders = InMemoryOrderRepository()
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+    orders.remember(order)
+
+    work = FailingWork(orders)
+
+    received_events: list[OrderPlaced] = []
+
+    def reaction(event: OrderPlaced) -> None:
+        received_events.append(event)
+
+    dispatcher = EventDispatcher(
+        reactions={
+            OrderPlaced: (reaction,),
+        }
+    )
+
+    with pytest.raises(RuntimeError, match="commit failed"):
+        place_order_and_dispatch(
+            order_id=order.id,
+            work=work,
+            placed_at=PLACED_AT,
+            dispatcher=dispatcher,
+        )
+
+    assert received_events == []
