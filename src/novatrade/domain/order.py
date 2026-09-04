@@ -57,7 +57,7 @@ class Order:
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
         self.placed_at: datetime | None = None
-        self._placed_events: list[OrderPlaced] = []
+        self._events: list[OrderPlaced] = []
 
     @property
     def lines(self) -> tuple[OrderLine, ...]:
@@ -65,9 +65,9 @@ class Order:
         return tuple(self._lines)
 
     @property
-    def placed_events(self) -> tuple[OrderPlaced, ...]:
+    def events(self) -> tuple[OrderPlaced, ...]:
         """Return facts recorded when this Order was placed."""
-        return tuple(self._placed_events)
+        return tuple(self._events)
 
     @classmethod
     def reconstitute(
@@ -143,7 +143,7 @@ class Order:
 
         self.status = OrderStatus.PLACED
         self.placed_at = placed_at
-        self._placed_events.append(
+        self._events.append(
             OrderPlaced(
                 order_id=self.id,
                 placed_at=placed_at,

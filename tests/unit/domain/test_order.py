@@ -449,11 +449,11 @@ def test_placing_order_records_that_order_was_placed() -> None:
 
     order.place(placed_at)
 
-    assert order.placed_events == (
-        {
-            "order_id": order.id,
-            "placed_at": placed_at,
-        },
+    assert order.events == (
+        OrderPlaced(
+            order_id=order.id,
+            placed_at=placed_at,
+        ),
     )
 
 
@@ -468,7 +468,7 @@ def test_recorded_placement_fact_has_business_meaning() -> None:
 
     order.place(placed_at)
 
-    placement = order.placed_events[0]
+    placement = order.events[0]
 
     assert placement.order_id == order.id
     assert placement.placed_at == placed_at
@@ -490,7 +490,7 @@ def test_reconstituting_placed_order_does_not_record_new_placement_fact() -> Non
         ),
     )
 
-    assert order.placed_events == ()
+    assert order.events == ()
 
 
 def test_placing_order_records_domain_event() -> None:
