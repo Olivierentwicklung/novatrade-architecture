@@ -454,3 +454,20 @@ def test_placing_order_records_that_order_was_placed() -> None:
             "placed_at": placed_at,
         },
     )
+
+
+def test_recorded_placement_fact_has_business_meaning() -> None:
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order.place(placed_at)
+
+    placement = order.placed_events[0]
+
+    assert placement.order_id == order.id
+    assert placement.placed_at == placed_at
