@@ -56,11 +56,17 @@ class Order:
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
         self.placed_at: datetime | None = None
+        self._placed_events: list[dict[str, object]] = []
 
     @property
     def lines(self) -> tuple[OrderLine, ...]:
         """Return the Order Lines without exposing the mutable collection."""
         return tuple(self._lines)
+
+    @property
+    def placed_events(self) -> tuple[dict[str, object], ...]:
+        """Return facts recorded when this Order was placed."""
+        return tuple(self._placed_events)
 
     @classmethod
     def reconstitute(
@@ -133,8 +139,15 @@ class Order:
         """Place the Order at the given time or reject it when it is empty."""
         if not self._lines:
             raise CannotPlaceEmptyOrder
+
         self.status = OrderStatus.PLACED
         self.placed_at = placed_at
+        self._placed_events.append(
+            {
+                "order_id": self.id,
+                "placed_at": placed_at,
+            }
+        )
 
     def remove_product(self, product_id: str) -> None:
         """Remove a Product from the Order."""
