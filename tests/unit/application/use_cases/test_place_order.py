@@ -7,6 +7,7 @@ import pytest
 from novatrade.adapters.in_memory.order_repository import InMemoryOrderRepository
 from novatrade.application.ports.order_repository import OrderRepository
 from novatrade.application.use_cases.place_order import place_order
+from novatrade.domain.events import OrderPlaced
 from novatrade.domain.order import CannotPlaceEmptyOrder, Order, OrderStatus
 
 PLACED_AT = datetime(
@@ -178,3 +179,28 @@ def test_placing_order_runs_inside_unit_of_work() -> None:
 
     assert work.entered
     assert work.exited
+
+
+def test_placing_order_returns_produced_domain_events() -> None:
+    orders = InMemoryOrderRepository()
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+    orders.remember(order)
+
+    work = FakeWork(orders)
+
+    events = place_order(
+        order_id=order.id,
+        work=work,
+        placed_at=PLACED_AT,
+    )
+
+    assert events == (
+        OrderPlaced(
+            order_id=order.id,
+            placed_at=PLACED_AT,
+        ),
+    )
