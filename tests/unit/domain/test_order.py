@@ -471,3 +471,22 @@ def test_recorded_placement_fact_has_business_meaning() -> None:
 
     assert placement.order_id == order.id
     assert placement.placed_at == placed_at
+
+
+def test_reconstituting_placed_order_does_not_record_new_placement_fact() -> None:
+    order_id = uuid4()
+    placed_at = datetime(2026, 9, 4, 10, 30)
+
+    order = Order.reconstitute(
+        order_id=order_id,
+        status=OrderStatus.PLACED,
+        placed_at=placed_at,
+        lines=(
+            OrderLine(
+                product_id="BOOK-123",
+                quantity=Quantity(1),
+            ),
+        ),
+    )
+
+    assert order.placed_events == ()
