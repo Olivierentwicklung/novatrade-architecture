@@ -1,4 +1,4 @@
-from novatrade.adapters.django.persistence.models import OrderPlacedRecord
+from novatrade.adapters.django.order_app.models import OrderPlacedRecord
 from novatrade.domain.events import OrderPlaced
 
 
