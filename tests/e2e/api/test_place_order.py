@@ -1,8 +1,11 @@
-from uuid import UUID, uuid4
-
 import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient
+
+from novatrade.adapters.django.order_app.persistence.order_repository import (
+    DjangoOrderRepository,
+)
+from novatrade.domain.order import Order, OrderStatus
 
 
 @pytest.fixture
@@ -12,25 +15,41 @@ def api_client() -> APIClient:
 
 
 @pytest.fixture
-def order_id() -> UUID:
-    """Provide the identity of the Order used by the scenario."""
-    return uuid4()
+def order() -> Order:
+    """Provide an existing Order that can be placed."""
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=2,
+    )
+
+    repository = DjangoOrderRepository()
+    repository.remember(order)
+
+    return order
 
 
 @pytest.fixture
-def place_order_url(order_id: UUID) -> str:
+def place_order_url(order: Order) -> str:
     """Provide the API URL for placing the Order."""
     return reverse(
         "order-place",
-        kwargs={"order_id": order_id},
+        kwargs={"order_id": order.id},
     )
 
 
 @pytest.mark.django_db
-def test_client_can_request_order_placement(
+def test_client_can_place_order(
     api_client: APIClient,
+    order: Order,
     place_order_url: str,
 ) -> None:
-    response = api_client.post(place_order_url, format="json")
+    response = api_client.post(  # type: ignore
+        place_order_url,
+        format="json",
+    )
 
-    assert response.status_code == 200
+    persisted_order = DjangoOrderRepository().get(order.id)
+
+    assert response.status_code == 200  # type: ignore
+    assert persisted_order.status == OrderStatus.PLACED
