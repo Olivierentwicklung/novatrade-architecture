@@ -5,5 +5,5 @@ from novatrade.domain.order import Order
 def list_orders(
     orders: OrderRepository,
 ) -> tuple[Order, ...]:
-    """Return the preserved Orders."""
-    return orders.list()
+    """Return the latest 100 Orders."""
+    return orders.latest(limit=100)

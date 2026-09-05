@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from novatrade.adapters.in_memory.order_repository import (
     InMemoryOrderRepository,
 )
@@ -6,8 +8,12 @@ from novatrade.domain.order import Order
 
 
 def test_list_orders_returns_existing_orders() -> None:
-    first_order = Order()
-    second_order = Order()
+    first_order = Order(
+        created_at=datetime(2026, 9, 5, 10, 0, tzinfo=timezone.utc),
+    )
+    second_order = Order(
+        created_at=datetime(2026, 9, 5, 10, 1, tzinfo=timezone.utc),
+    )
 
     orders = InMemoryOrderRepository()
     orders.remember(first_order)
@@ -19,9 +25,6 @@ def test_list_orders_returns_existing_orders() -> None:
         first_order.id,
         second_order.id,
     }
-
-
-from datetime import datetime, timedelta, timezone
 
 
 def test_list_orders_returns_latest_100_orders() -> None:

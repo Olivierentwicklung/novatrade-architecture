@@ -11,6 +11,10 @@ class OrderRepository(Protocol):
         """Return the Order with the given identity."""
         ...
 
+    def latest(self, limit: int) -> tuple[Order, ...]:
+        """Return the most recently created Orders, newest first."""
+        ...
+
     def list(self) -> tuple[Order, ...]:
         """Return the preserved Orders."""
         ...
