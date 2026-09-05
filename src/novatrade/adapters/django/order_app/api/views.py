@@ -42,10 +42,13 @@ class OrderDetailView(APIView):
 
     def get(self, request: Request, order_id: UUID) -> Response:
         """Return the requested Order as an HTTP representation."""
-        order = get_order(
-            order_id=order_id,
-            orders=DjangoOrderRepository(),
-        )
+        try:
+            order = get_order(
+                order_id=order_id,
+                orders=DjangoOrderRepository(),
+            )
+        except OrderNotFound:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         return Response(
             {
