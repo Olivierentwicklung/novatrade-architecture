@@ -6,10 +6,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from novatrade.adapters.django.order_app.persistence.order_repository import (
+    DjangoOrderRepository,
+)
 from novatrade.adapters.django.order_app.persistence.unit_of_work import (
     DjangoUnitOfWork,
 )
 from novatrade.application.ports.order_repository_errors import OrderNotFound
+from novatrade.application.use_cases.get_order import get_order
 from novatrade.application.use_cases.place_order import place_order
 from novatrade.domain.order import CannotPlaceEmptyOrder
 
@@ -18,6 +22,7 @@ class PlaceOrderView(APIView):
     """HTTP entry point for placing an Order."""
 
     def post(self, request: Request, order_id: UUID) -> Response:
+        """Place the requested Order and translate failures to HTTP responses."""
         try:
             place_order(
                 order_id=order_id,
@@ -36,4 +41,16 @@ class OrderDetailView(APIView):
     """HTTP entry point for retrieving an Order."""
 
     def get(self, request: Request, order_id: UUID) -> Response:
-        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+        """Return the requested Order as an HTTP representation."""
+        order = get_order(
+            order_id=order_id,
+            orders=DjangoOrderRepository(),
+        )
+
+        return Response(
+            {
+                "id": str(order.id),
+                "status": order.status.value,
+            },
+            status=status.HTTP_200_OK,
+        )
