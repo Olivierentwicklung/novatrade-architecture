@@ -40,6 +40,18 @@ class DjangoOrderRepository:
         except OrderRecord.DoesNotExist as error:
             raise OrderNotFound from error
 
+        return self._reconstitute(order_record)
+
+    def list(self) -> tuple[Order, ...]:
+        """Return the preserved Orders."""
+        return tuple(
+            self._reconstitute(order_record)
+            for order_record in OrderRecord.objects.all()
+        )
+
+    @staticmethod
+    def _reconstitute(order_record: OrderRecord) -> Order:
+        """Reconstitute a Domain Order from its persistence record."""
         return Order.reconstitute(
             order_id=order_record.id,
             status=OrderStatus(order_record.status),
