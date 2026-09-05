@@ -30,3 +30,10 @@ class PlaceOrderView(APIView):
             return Response(status=status.HTTP_409_CONFLICT)
 
         return Response(status=status.HTTP_200_OK)
+
+
+class OrderDetailView(APIView):
+    """HTTP entry point for retrieving an Order."""
+
+    def get(self, request: Request, order_id: UUID) -> Response:
+        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
