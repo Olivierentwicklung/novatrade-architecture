@@ -79,3 +79,23 @@ def test_client_receives_not_found_when_order_does_not_exist(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND  # type: ignore
+
+
+@pytest.mark.django_db
+def test_client_receives_conflict_when_empty_order_cannot_be_placed(
+    api_client: APIClient,
+) -> None:
+    order = Order()
+    DjangoOrderRepository().remember(order)
+
+    place_order_url = reverse(
+        "order-place",
+        kwargs={"order_id": order.id},
+    )
+
+    response = api_client.post(  # type: ignore
+        place_order_url,
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_409_CONFLICT  # type: ignore
