@@ -50,6 +50,12 @@ class DjangoOrderRepository:
             for order_record in OrderRecord.objects.all()
         )
 
+    def latest(self, limit: int) -> tuple[Order, ...]:
+        """Return the most recently created Orders, newest first."""
+        order_records = OrderRecord.objects.order_by("-created_at")[:limit]
+
+        return tuple(self._reconstitute(order_record) for order_record in order_records)
+
     @staticmethod
     def _reconstitute(order_record: OrderRecord) -> Order:
         """Reconstitute a Domain Order from its persistence record."""
