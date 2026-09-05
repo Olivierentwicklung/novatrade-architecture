@@ -16,6 +16,7 @@ class DjangoOrderRepository:
             id=order.id,
             defaults={
                 "status": order.status.value,
+                "created_at": order.created_at,
                 "placed_at": order.placed_at,
             },
         )
@@ -55,6 +56,7 @@ class DjangoOrderRepository:
         return Order.reconstitute(
             order_id=order_record.id,
             status=OrderStatus(order_record.status),
+            created_at=order_record.created_at,
             placed_at=order_record.placed_at,
             lines=tuple(
                 OrderLine(
