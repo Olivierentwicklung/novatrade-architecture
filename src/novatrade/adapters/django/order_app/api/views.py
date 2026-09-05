@@ -57,3 +57,11 @@ class OrderDetailView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class OrderListView(APIView):
+    """HTTP entry point for retrieving Orders."""
+
+    def get(self, request: Request) -> Response:
+        """Return the Orders as HTTP representations."""
+        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
