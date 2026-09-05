@@ -1,4 +1,6 @@
+from collections.abc import Callable
 from datetime import datetime, timezone
+from typing import ContextManager
 from uuid import uuid4
 
 import pytest
@@ -102,3 +104,32 @@ def test_repository_returns_latest_orders() -> None:
         newer_order.id,
         middle_order.id,
     ]
+
+
+@pytest.mark.django_db
+def test_latest_orders_does_not_issue_one_lines_query_per_order(
+    django_assert_num_queries: Callable[[int], ContextManager[None]],
+) -> None:
+    repository = DjangoOrderRepository()
+
+    for index in range(3):
+        order = Order(
+            created_at=datetime(
+                2026,
+                9,
+                5,
+                11,
+                index,
+                tzinfo=timezone.utc,
+            )
+        )
+        order.add_product(
+            product_id=f"BOOK-{index}",
+            quantity=1,
+        )
+        repository.remember(order)
+
+    with django_assert_num_queries(2):
+        retrieved_orders = repository.latest(limit=3)
+
+    assert len(retrieved_orders) == 3
