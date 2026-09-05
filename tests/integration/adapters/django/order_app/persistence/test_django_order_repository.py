@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
+from uuid import uuid4
 
 import pytest
 
 from novatrade.adapters.django.order_app.persistence.order_repository import (
     DjangoOrderRepository,
 )
+from novatrade.application.ports.order_repository_errors import OrderNotFound
 from novatrade.domain.order import Order
 
 PLACED_AT = datetime(
@@ -36,3 +38,12 @@ def test_order_can_be_preserved_and_retrieved_by_identity() -> None:
     assert retrieved_order.status == order.status
     assert retrieved_order.quantity_for("BOOK-123") == 2
     assert retrieved_order.placed_at == PLACED_AT
+
+
+@pytest.mark.django_db
+def test_missing_order_is_translated_to_application_vocabulary() -> None:
+    repository = DjangoOrderRepository()
+    unknown_order_id = uuid4()
+
+    with pytest.raises(OrderNotFound):
+        repository.get(unknown_order_id)
