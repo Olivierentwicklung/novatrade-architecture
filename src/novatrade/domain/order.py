@@ -81,9 +81,13 @@ class Order:
         status: OrderStatus,
         placed_at: datetime | None,
         lines: tuple[OrderLine, ...],
+        created_at: datetime | None = None,
     ) -> "Order":
         """Reconstitute an existing Order from its historical state."""
-        order = cls(order_id=order_id)
+        order = cls(
+            order_id=order_id,
+            created_at=created_at,
+        )
         order._lines = list(lines)
         order.status = status
         order.placed_at = placed_at
