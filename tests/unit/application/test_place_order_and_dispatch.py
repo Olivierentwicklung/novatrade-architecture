@@ -4,11 +4,10 @@ from types import TracebackType
 import pytest
 
 from novatrade.adapters.in_memory.order_repository import InMemoryOrderRepository
-from novatrade.application.event_dispatcher import EventDispatcher
 from novatrade.application.place_order_and_dispatch import place_order_and_dispatch
 from novatrade.application.ports.order_repository import OrderRepository
 from novatrade.domain.events import OrderPlaced
-from novatrade.domain.order import Order, OrderStatus
+from novatrade.domain.order import Order
 
 PLACED_AT = datetime(
     2026,
@@ -26,6 +25,16 @@ class FakeEvents:
 
     def remember(self, event: OrderPlaced) -> None:
         self.remembered_events.append(event)
+
+
+class FakeEventPublisher:
+    """Records Domain Events published by the Application."""
+
+    def __init__(self) -> None:
+        self.published_events: list[OrderPlaced] = []
+
+    def publish(self, event: OrderPlaced) -> None:
+        self.published_events.append(event)
 
 
 class FakeWork:
@@ -55,7 +64,7 @@ class FailingWork(FakeWork):
         raise RuntimeError("commit failed")
 
 
-def test_successfully_placed_order_dispatches_its_domain_events() -> None:
+def test_successfully_placed_order_publishes_its_domain_events() -> None:
     orders = InMemoryOrderRepository()
     order = Order()
     order.add_product(
@@ -65,26 +74,16 @@ def test_successfully_placed_order_dispatches_its_domain_events() -> None:
     orders.remember(order)
 
     work = FakeWork(orders)
-
-    received_events: list[OrderPlaced] = []
-
-    def reaction(event: OrderPlaced) -> None:
-        received_events.append(event)
-
-    dispatcher = EventDispatcher(
-        reactions={
-            OrderPlaced: (reaction,),
-        }
-    )
+    publisher = FakeEventPublisher()
 
     place_order_and_dispatch(
         order_id=order.id,
         work=work,
         placed_at=PLACED_AT,
-        dispatcher=dispatcher,
+        publisher=publisher,
     )
 
-    assert received_events == [
+    assert publisher.published_events == [
         OrderPlaced(
             order_id=order.id,
             placed_at=PLACED_AT,
@@ -92,7 +91,7 @@ def test_successfully_placed_order_dispatches_its_domain_events() -> None:
     ]
 
 
-def test_failed_unit_of_work_does_not_dispatch_domain_events() -> None:
+def test_failed_unit_of_work_does_not_publish_domain_events() -> None:
     orders = InMemoryOrderRepository()
     order = Order()
     order.add_product(
@@ -102,106 +101,14 @@ def test_failed_unit_of_work_does_not_dispatch_domain_events() -> None:
     orders.remember(order)
 
     work = FailingWork(orders)
-
-    received_events: list[OrderPlaced] = []
-
-    def reaction(event: OrderPlaced) -> None:
-        received_events.append(event)
-
-    dispatcher = EventDispatcher(
-        reactions={
-            OrderPlaced: (reaction,),
-        }
-    )
+    publisher = FakeEventPublisher()
 
     with pytest.raises(RuntimeError, match="commit failed"):
         place_order_and_dispatch(
             order_id=order.id,
             work=work,
             placed_at=PLACED_AT,
-            dispatcher=dispatcher,
+            publisher=publisher,
         )
 
-    assert received_events == []
-
-
-def test_one_reaction_can_succeed_before_another_reaction_fails() -> None:
-    orders = InMemoryOrderRepository()
-    order = Order()
-    order.add_product(
-        product_id="BOOK-123",
-        quantity=1,
-    )
-    orders.remember(order)
-
-    work = FakeWork(orders)
-
-    successful_reactions: list[OrderPlaced] = []
-
-    def successful_reaction(event: OrderPlaced) -> None:
-        successful_reactions.append(event)
-
-    def failing_reaction(event: OrderPlaced) -> None:
-        raise RuntimeError("fulfillment failed")
-
-    dispatcher = EventDispatcher(
-        reactions={
-            OrderPlaced: (
-                successful_reaction,
-                failing_reaction,
-            ),
-        }
-    )
-
-    with pytest.raises(RuntimeError, match="fulfillment failed"):
-        place_order_and_dispatch(
-            order_id=order.id,
-            work=work,
-            placed_at=PLACED_AT,
-            dispatcher=dispatcher,
-        )
-
-    assert successful_reactions == [
-        OrderPlaced(
-            order_id=order.id,
-            placed_at=PLACED_AT,
-        )
-    ]
-
-    placed_order = orders.get(order.id)
-
-    assert placed_order.status is OrderStatus.PLACED
-
-
-def test_placing_order_publishes_its_domain_events() -> None:
-    orders = InMemoryOrderRepository()
-    order = Order()
-    order.add_product(
-        product_id="BOOK-123",
-        quantity=1,
-    )
-    orders.remember(order)
-
-    work = FakeWork(orders)
-
-    published_events: list[OrderPlaced] = []
-
-    class FakeEventPublisher:
-        """Records published Domain Events for the test."""
-
-        def publish(self, event: OrderPlaced) -> None:
-            published_events.append(event)
-
-    place_order_and_dispatch(
-        order_id=order.id,
-        work=work,
-        placed_at=PLACED_AT,
-        publisher=FakeEventPublisher(),
-    )
-
-    assert published_events == [
-        OrderPlaced(
-            order_id=order.id,
-            placed_at=PLACED_AT,
-        )
-    ]
+    assert publisher.published_events == []
