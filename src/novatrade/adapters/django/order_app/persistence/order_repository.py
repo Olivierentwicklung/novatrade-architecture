@@ -52,7 +52,9 @@ class DjangoOrderRepository:
 
     def latest(self, limit: int) -> tuple[Order, ...]:
         """Return the most recently created Orders, newest first."""
-        order_records = OrderRecord.objects.order_by("-created_at")[:limit]
+        order_records = OrderRecord.objects.prefetch_related("lines").order_by(
+            "-created_at"
+        )[:limit]
 
         return tuple(self._reconstitute(order_record) for order_record in order_records)
 
