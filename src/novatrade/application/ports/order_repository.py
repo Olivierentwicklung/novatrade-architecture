@@ -11,6 +11,10 @@ class OrderRepository(Protocol):
         """Return the Order with the given identity."""
         ...
 
+    def list(self) -> tuple[Order, ...]:
+        """Return the preserved Orders."""
+        ...
+
     def remember(self, order: Order) -> None:
         """Preserve an Order."""
         ...

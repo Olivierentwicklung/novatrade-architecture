@@ -18,6 +18,10 @@ class InMemoryOrderRepository:
         """Return the Order with the given identity."""
         return self._reconstitute(self._orders[order_id])
 
+    def list(self) -> tuple[Order, ...]:
+        """Return the remembered Orders."""
+        return tuple(self._reconstitute(order) for order in self._orders.values())
+
     @staticmethod
     def _reconstitute(order: Order) -> Order:
         return Order.reconstitute(
