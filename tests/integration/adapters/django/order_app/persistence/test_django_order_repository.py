@@ -64,3 +64,16 @@ def test_repository_lists_preserved_orders() -> None:
         first_order.id,
         second_order.id,
     }
+
+
+@pytest.mark.django_db
+def test_repository_preserves_order_creation_time() -> None:
+    created_at = datetime(2026, 9, 5, 10, 30, tzinfo=timezone.utc)
+    order = Order(created_at=created_at)
+    repository = DjangoOrderRepository()
+
+    repository.remember(order)
+
+    retrieved_order = repository.get(order.id)
+
+    assert retrieved_order.created_at == created_at
