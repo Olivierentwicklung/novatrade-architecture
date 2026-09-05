@@ -540,3 +540,18 @@ def test_new_order_remembers_when_it_was_created() -> None:
     order = Order(created_at=created_at)
 
     assert order.created_at == created_at
+
+
+def test_reconstituted_order_restores_when_it_was_created() -> None:
+    order_id = uuid4()
+    created_at = datetime(2026, 9, 4, 10, 30, tzinfo=timezone.utc)
+
+    order = Order.reconstitute(
+        order_id=order_id,
+        status=OrderStatus.DRAFT,
+        placed_at=None,
+        lines=(),
+        created_at=created_at,
+    )
+
+    assert order.created_at == created_at
