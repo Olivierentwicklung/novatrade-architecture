@@ -16,6 +16,7 @@ class DjangoOrderRepository:
             id=order.id,
             defaults={
                 "status": order.status.value,
+                "created_at": order.created_at,
                 "placed_at": order.placed_at,
             },
         )
@@ -40,9 +41,28 @@ class DjangoOrderRepository:
         except OrderRecord.DoesNotExist as error:
             raise OrderNotFound from error
 
+        return self._reconstitute(order_record)
+
+    def list(self) -> tuple[Order, ...]:
+        """Return the preserved Orders."""
+        return tuple(
+            self._reconstitute(order_record)
+            for order_record in OrderRecord.objects.all()
+        )
+
+    def latest(self, limit: int) -> tuple[Order, ...]:
+        """Return the most recently created Orders, newest first."""
+        order_records = OrderRecord.objects.order_by("-created_at")[:limit]
+
+        return tuple(self._reconstitute(order_record) for order_record in order_records)
+
+    @staticmethod
+    def _reconstitute(order_record: OrderRecord) -> Order:
+        """Reconstitute a Domain Order from its persistence record."""
         return Order.reconstitute(
             order_id=order_record.id,
             status=OrderStatus(order_record.status),
+            created_at=order_record.created_at,
             placed_at=order_record.placed_at,
             lines=tuple(
                 OrderLine(

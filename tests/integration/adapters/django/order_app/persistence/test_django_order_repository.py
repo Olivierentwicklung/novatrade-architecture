@@ -47,3 +47,58 @@ def test_missing_order_is_translated_to_application_vocabulary() -> None:
 
     with pytest.raises(OrderNotFound):
         repository.get(unknown_order_id)
+
+
+@pytest.mark.django_db
+def test_repository_lists_preserved_orders() -> None:
+    repository = DjangoOrderRepository()
+    first_order = Order()
+    second_order = Order()
+
+    repository.remember(first_order)
+    repository.remember(second_order)
+
+    retrieved_orders = repository.list()
+
+    assert {order.id for order in retrieved_orders} == {
+        first_order.id,
+        second_order.id,
+    }
+
+
+@pytest.mark.django_db
+def test_repository_preserves_order_creation_time() -> None:
+    created_at = datetime(2026, 9, 5, 10, 30, tzinfo=timezone.utc)
+    order = Order(created_at=created_at)
+    repository = DjangoOrderRepository()
+
+    repository.remember(order)
+
+    retrieved_order = repository.get(order.id)
+
+    assert retrieved_order.created_at == created_at
+
+
+@pytest.mark.django_db
+def test_repository_returns_latest_orders() -> None:
+    older_order = Order(
+        created_at=datetime(2026, 9, 5, 10, 0, tzinfo=timezone.utc),
+    )
+    newer_order = Order(
+        created_at=datetime(2026, 9, 5, 10, 2, tzinfo=timezone.utc),
+    )
+    middle_order = Order(
+        created_at=datetime(2026, 9, 5, 10, 1, tzinfo=timezone.utc),
+    )
+
+    repository = DjangoOrderRepository()
+    repository.remember(older_order)
+    repository.remember(newer_order)
+    repository.remember(middle_order)
+
+    retrieved_orders = repository.latest(limit=2)
+
+    assert [order.id for order in retrieved_orders] == [
+        newer_order.id,
+        middle_order.id,
+    ]

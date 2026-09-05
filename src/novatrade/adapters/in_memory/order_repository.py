@@ -18,11 +18,26 @@ class InMemoryOrderRepository:
         """Return the Order with the given identity."""
         return self._reconstitute(self._orders[order_id])
 
+    def list(self) -> tuple[Order, ...]:
+        """Return the remembered Orders."""
+        return tuple(self._reconstitute(order) for order in self._orders.values())
+
+    def latest(self, limit: int) -> tuple[Order, ...]:
+        """Return the most recently created Orders, newest first."""
+        orders = sorted(
+            self._orders.values(),
+            key=lambda order: order.created_at,
+            reverse=True,
+        )
+
+        return tuple(self._reconstitute(order) for order in orders[:limit])
+
     @staticmethod
     def _reconstitute(order: Order) -> Order:
         return Order.reconstitute(
             order_id=order.id,
             status=order.status,
+            created_at=order.created_at,
             placed_at=order.placed_at,
             lines=order.lines,
         )

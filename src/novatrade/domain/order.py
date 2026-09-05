@@ -51,9 +51,14 @@ class OrderLine:
 class Order:
     """Represents a customer Order in the NovaTrade ordering domain."""
 
-    def __init__(self, order_id: UUID | None = None) -> None:
+    def __init__(
+        self,
+        order_id: UUID | None = None,
+        created_at: datetime | None = None,
+    ) -> None:
         """Create an empty Order with a new or existing identity."""
         self.id = order_id if order_id is not None else uuid4()
+        self.created_at = created_at
         self._lines: list[OrderLine] = []
         self.status = OrderStatus.DRAFT
         self.placed_at: datetime | None = None
@@ -76,9 +81,13 @@ class Order:
         status: OrderStatus,
         placed_at: datetime | None,
         lines: tuple[OrderLine, ...],
+        created_at: datetime | None = None,
     ) -> "Order":
         """Reconstitute an existing Order from its historical state."""
-        order = cls(order_id=order_id)
+        order = cls(
+            order_id=order_id,
+            created_at=created_at,
+        )
         order._lines = list(lines)
         order.status = status
         order.placed_at = placed_at
