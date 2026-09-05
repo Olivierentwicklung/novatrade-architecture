@@ -14,6 +14,7 @@ from novatrade.adapters.django.order_app.persistence.unit_of_work import (
 )
 from novatrade.application.ports.order_repository_errors import OrderNotFound
 from novatrade.application.use_cases.get_order import get_order
+from novatrade.application.use_cases.list_orders import list_orders
 from novatrade.application.use_cases.place_order import place_order
 from novatrade.domain.order import CannotPlaceEmptyOrder
 
@@ -64,4 +65,17 @@ class OrderListView(APIView):
 
     def get(self, request: Request) -> Response:
         """Return the Orders as HTTP representations."""
-        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+        orders = list_orders(
+            orders=DjangoOrderRepository(),
+        )
+
+        return Response(
+            [
+                {
+                    "id": str(order.id),
+                    "status": order.status.value,
+                }
+                for order in orders
+            ],
+            status=status.HTTP_200_OK,
+        )
