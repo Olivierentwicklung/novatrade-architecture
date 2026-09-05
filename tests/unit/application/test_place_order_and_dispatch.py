@@ -171,3 +171,35 @@ def test_one_reaction_can_succeed_before_another_reaction_fails() -> None:
     placed_order = orders.get(order.id)
 
     assert placed_order.status is OrderStatus.PLACED
+
+
+def test_placing_order_does_not_execute_reactions_before_returning() -> None:
+    orders = InMemoryOrderRepository()
+    order = Order()
+    order.add_product(
+        product_id="BOOK-123",
+        quantity=1,
+    )
+    orders.remember(order)
+
+    work = FakeWork(orders)
+
+    executed_reactions: list[OrderPlaced] = []
+
+    def slow_reaction(event: OrderPlaced) -> None:
+        executed_reactions.append(event)
+
+    dispatcher = EventDispatcher(
+        reactions={
+            OrderPlaced: (slow_reaction,),
+        }
+    )
+
+    place_order_and_dispatch(
+        order_id=order.id,
+        work=work,
+        placed_at=PLACED_AT,
+        dispatcher=dispatcher,
+    )
+
+    assert executed_reactions == []
