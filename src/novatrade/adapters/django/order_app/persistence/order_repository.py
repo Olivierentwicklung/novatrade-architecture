@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from novatrade.application.ports.order_repository_errors import OrderNotFound
 from novatrade.domain.order import Order, OrderLine, OrderStatus
 from novatrade.domain.quantity import Quantity
 
@@ -34,7 +35,10 @@ class DjangoOrderRepository:
 
     def get(self, order_id: UUID) -> Order:
         """Return the Order with the given identity."""
-        order_record = OrderRecord.objects.get(id=order_id)
+        try:
+            order_record = OrderRecord.objects.get(id=order_id)
+        except OrderRecord.DoesNotExist as error:
+            raise OrderNotFound from error
 
         return Order.reconstitute(
             order_id=order_record.id,
