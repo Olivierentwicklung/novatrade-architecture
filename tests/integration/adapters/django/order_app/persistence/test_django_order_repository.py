@@ -47,3 +47,20 @@ def test_missing_order_is_translated_to_application_vocabulary() -> None:
 
     with pytest.raises(OrderNotFound):
         repository.get(unknown_order_id)
+
+
+@pytest.mark.django_db
+def test_repository_lists_preserved_orders() -> None:
+    repository = DjangoOrderRepository()
+    first_order = Order()
+    second_order = Order()
+
+    repository.remember(first_order)
+    repository.remember(second_order)
+
+    retrieved_orders = repository.list()
+
+    assert {order.id for order in retrieved_orders} == {
+        first_order.id,
+        second_order.id,
+    }
