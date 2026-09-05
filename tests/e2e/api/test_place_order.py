@@ -2,6 +2,7 @@ import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient
 
+from novatrade.adapters.django.order_app.models import OrderPlacedRecord
 from novatrade.adapters.django.order_app.persistence.order_repository import (
     DjangoOrderRepository,
 )
@@ -50,6 +51,10 @@ def test_client_can_place_order(
     )
 
     persisted_order = DjangoOrderRepository().get(order.id)
+    persisted_event = OrderPlacedRecord.objects.get(
+        order_id=order.id,
+    )
 
     assert response.status_code == 200  # type: ignore
-    assert persisted_order.status == OrderStatus.PLACED
+    assert persisted_order.status is OrderStatus.PLACED
+    assert persisted_event.order_id == order.id
