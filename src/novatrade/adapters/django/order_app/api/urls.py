@@ -1,8 +1,16 @@
 from django.urls import path
 
-from novatrade.adapters.django.order_app.api.views import PlaceOrderView
+from novatrade.adapters.django.order_app.api.views import (
+    OrderDetailView,
+    PlaceOrderView,
+)
 
 urlpatterns = [
+    path(
+        "orders/<uuid:order_id>/",
+        OrderDetailView.as_view(),
+        name="order-detail",
+    ),
     path(
         "orders/<uuid:order_id>/place/",
         PlaceOrderView.as_view(),
