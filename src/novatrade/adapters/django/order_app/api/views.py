@@ -11,6 +11,7 @@ from novatrade.adapters.django.order_app.persistence.unit_of_work import (
 )
 from novatrade.application.ports.order_repository_errors import OrderNotFound
 from novatrade.application.use_cases.place_order import place_order
+from novatrade.domain.order import CannotPlaceEmptyOrder
 
 
 class PlaceOrderView(APIView):
@@ -25,5 +26,7 @@ class PlaceOrderView(APIView):
             )
         except OrderNotFound:
             return Response(status=status.HTTP_404_NOT_FOUND)
+        except CannotPlaceEmptyOrder:
+            return Response(status=status.HTTP_409_CONFLICT)
 
         return Response(status=status.HTTP_200_OK)
