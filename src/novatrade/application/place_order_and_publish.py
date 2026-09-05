@@ -6,7 +6,7 @@ from novatrade.application.ports.unit_of_work import UnitOfWork
 from novatrade.application.use_cases.place_order import place_order
 
 
-def place_order_and_dispatch(
+def place_order_and_publish(
     order_id: UUID,
     work: UnitOfWork,
     placed_at: datetime,

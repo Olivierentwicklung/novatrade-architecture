@@ -4,7 +4,9 @@ from types import TracebackType
 import pytest
 
 from novatrade.adapters.in_memory.order_repository import InMemoryOrderRepository
-from novatrade.application.place_order_and_dispatch import place_order_and_dispatch
+from novatrade.application.place_order_and_publish import (
+    place_order_and_publish,
+)
 from novatrade.application.ports.order_repository import OrderRepository
 from novatrade.domain.events import OrderPlaced
 from novatrade.domain.order import Order
@@ -76,7 +78,7 @@ def test_successfully_placed_order_publishes_its_domain_events() -> None:
     work = FakeWork(orders)
     publisher = FakeEventPublisher()
 
-    place_order_and_dispatch(
+    place_order_and_publish(
         order_id=order.id,
         work=work,
         placed_at=PLACED_AT,
@@ -104,7 +106,7 @@ def test_failed_unit_of_work_does_not_publish_domain_events() -> None:
     publisher = FakeEventPublisher()
 
     with pytest.raises(RuntimeError, match="commit failed"):
-        place_order_and_dispatch(
+        place_order_and_publish(
             order_id=order.id,
             work=work,
             placed_at=PLACED_AT,
