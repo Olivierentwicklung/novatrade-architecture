@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 import fakeredis
-from novatrade.adapters.redis.event_receiver import RedisEventReceiver
 
 from novatrade.adapters.redis.event_publisher import RedisEventPublisher
+from novatrade.adapters.redis.event_receiver import RedisEventReceiver
 from novatrade.domain.events import OrderPlaced
 
 PLACED_AT = datetime(
