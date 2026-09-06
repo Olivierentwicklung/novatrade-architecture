@@ -6,7 +6,7 @@ Chapter 23 separated publishing a Domain Event from executing the reactions inte
 
 After an Order was successfully placed and its transaction completed, the Application could publish the resulting `OrderPlaced` event through an `EventPublisher` port instead of immediately dispatching reactions. An `InMemoryEventPublisher` gave that boundary a concrete implementation:
 
-```text
+```
 OrderPlaced
     ↓
 EventPublisher
@@ -34,7 +34,7 @@ The existing `EventPublisher` port remains the Application-facing publication bo
 
 On the other side of the boundary, a `RedisEventReceiver` retrieves that representation from Redis and reconstructs an `OrderPlaced` Domain Event.
 
-```text
+```
 APPLICATION A                         APPLICATION B
 
 OrderPlaced
@@ -108,7 +108,7 @@ However, `fakeredis` executes inside the same Python process as the test. It can
 
 A separate integration test therefore uses the real Redis instance running through Docker and launches independent Python subprocesses:
 
-```text
+```
 Python Process A
        │
        ▼
@@ -140,7 +140,7 @@ The smallest GREEN introduced a Redis publisher that serialized `OrderPlaced` an
 
 This changed the ownership of pending work:
 
-```text
+```
 Before
 
 InMemoryEventPublisher
@@ -187,7 +187,7 @@ The integration test passed only when the event successfully crossed real Redis 
 
 The publisher and receiver both depended on the same Redis channel:
 
-```text
+```
 novatrade:events
 ```
 
@@ -207,7 +207,7 @@ The publishing process no longer needs the receiving side to share its Python me
 
 The architecture now makes four responsibilities explicit:
 
-```text
+```
 EventRepository.remember(event)
     = preserve the business fact transactionally
 
