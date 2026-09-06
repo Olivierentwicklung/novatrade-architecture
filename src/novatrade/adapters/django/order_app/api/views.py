@@ -9,27 +9,30 @@ from rest_framework.views import APIView
 from novatrade.adapters.django.order_app.persistence.order_repository import (
     DjangoOrderRepository,
 )
-from novatrade.adapters.django.order_app.persistence.unit_of_work import (
-    DjangoUnitOfWork,
+from novatrade.application.commands.place_order import PlaceOrderCommand
+from novatrade.application.commands.place_order_handler import (
+    PlaceOrderCommandHandler,
 )
 from novatrade.application.ports.order_repository_errors import OrderNotFound
 from novatrade.application.use_cases.get_order import get_order
 from novatrade.application.use_cases.list_orders import list_orders
-from novatrade.application.use_cases.place_order import place_order
 from novatrade.domain.order import CannotPlaceEmptyOrder
 
 
 class PlaceOrderView(APIView):
     """HTTP entry point for placing an Order."""
 
+    handler: PlaceOrderCommandHandler
+
     def post(self, request: Request, order_id: UUID) -> Response:
         """Place the requested Order and translate failures to HTTP responses."""
+        command = PlaceOrderCommand(
+            order_id=order_id,
+            placed_at=datetime.now(timezone.utc),
+        )
+
         try:
-            place_order(
-                order_id=order_id,
-                work=DjangoUnitOfWork(),
-                placed_at=datetime.now(timezone.utc),
-            )
+            self.handler.handle(command)
         except OrderNotFound:
             return Response(status=status.HTTP_404_NOT_FOUND)
         except CannotPlaceEmptyOrder:
