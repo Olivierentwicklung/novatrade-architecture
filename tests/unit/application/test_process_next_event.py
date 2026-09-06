@@ -44,3 +44,19 @@ def test_received_event_is_dispatched_to_interested_reactions() -> None:
     )
 
     assert dispatcher.dispatched_event == event
+
+
+def test_nothing_is_dispatched_when_no_event_is_available() -> None:
+    class EmptyEventReceiver:
+        def receive(self) -> None:
+            return None
+
+    receiver = EmptyEventReceiver()
+    dispatcher = SpyEventDispatcher()
+
+    process_next_event(
+        receiver=receiver,
+        dispatcher=dispatcher,
+    )
+
+    assert dispatcher.dispatched_event is None
