@@ -2,6 +2,7 @@ import json
 
 from redis import Redis
 
+from novatrade.adapters.redis.event_channel import EVENT_CHANNEL
 from novatrade.domain.events import OrderPlaced
 
 
@@ -21,4 +22,4 @@ class RedisEventPublisher:
             }
         )
 
-        self._redis.rpush("novatrade:events", payload)
+        self._redis.rpush(EVENT_CHANNEL, payload)

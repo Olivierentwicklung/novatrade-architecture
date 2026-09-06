@@ -4,6 +4,7 @@ from uuid import UUID
 
 from redis import Redis
 
+from novatrade.adapters.redis.event_channel import EVENT_CHANNEL
 from novatrade.domain.events import OrderPlaced
 
 
@@ -15,7 +16,7 @@ class RedisEventReceiver:
 
     def receive(self) -> OrderPlaced | None:
         """Receive the next Domain Event waiting to be processed."""
-        payload = self._redis.lpop("novatrade:events")
+        payload = self._redis.lpop(EVENT_CHANNEL)
 
         if payload is None:
             return None

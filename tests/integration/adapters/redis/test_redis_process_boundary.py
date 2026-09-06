@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from redis import Redis
 
+from novatrade.adapters.redis.event_channel import EVENT_CHANNEL
 from novatrade.domain.events import OrderPlaced
 
 PLACED_AT = datetime(
@@ -26,7 +27,7 @@ def test_event_published_by_one_process_is_received_by_another() -> None:
         port=6379,
         decode_responses=True,
     )
-    redis.delete("novatrade:events")
+    redis.delete(EVENT_CHANNEL)
 
     event = OrderPlaced(
         order_id=uuid4(),
