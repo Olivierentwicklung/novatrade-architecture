@@ -10,10 +10,16 @@ from novatrade.application.commands.place_order_handler import (
 
 
 def place_order_handler_factory(
-    redis: Redis,
+    redis: Redis | None = None,
 ) -> PlaceOrderCommandHandler:
     """Assemble the production handler for placing Orders."""
+    redis_client = redis or Redis(
+        host="localhost",
+        port=6379,
+        decode_responses=True,
+    )
+
     return PlaceOrderCommandHandler(
         work=DjangoUnitOfWork(),
-        publisher=RedisEventPublisher(redis),
+        publisher=RedisEventPublisher(redis_client),
     )

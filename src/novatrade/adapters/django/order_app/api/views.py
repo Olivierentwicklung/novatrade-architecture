@@ -22,10 +22,13 @@ from novatrade.domain.order import CannotPlaceEmptyOrder
 class PlaceOrderView(APIView):
     """HTTP entry point for placing an Order."""
 
-    handler: PlaceOrderCommandHandler
+    handler: PlaceOrderCommandHandler | None = None
 
     def post(self, request: Request, order_id: UUID) -> Response:
         """Place the requested Order and translate failures to HTTP responses."""
+        if self.handler is None:
+            raise RuntimeError("PlaceOrderCommandHandler is not configured.")
+
         command = PlaceOrderCommand(
             order_id=order_id,
             placed_at=datetime.now(timezone.utc),
