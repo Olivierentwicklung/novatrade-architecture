@@ -1,10 +1,10 @@
 from fakeredis import FakeRedis
-from novatrade.bootstrap.place_order import (
-    place_order_handler_factory,
-)
 
 from novatrade.application.commands.place_order_handler import (
     PlaceOrderCommandHandler,
+)
+from novatrade.bootstrap.place_order import (
+    place_order_handler_factory,
 )
 
 
