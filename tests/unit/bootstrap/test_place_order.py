@@ -1,4 +1,4 @@
-from novatrade.application.place_order_handler_factory import (
+from novatrade.bootstrap.place_order import (
     place_order_handler_factory,
 )
 
