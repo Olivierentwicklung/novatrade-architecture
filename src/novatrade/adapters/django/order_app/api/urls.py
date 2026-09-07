@@ -5,6 +5,9 @@ from novatrade.adapters.django.order_app.api.views import (
     OrderListView,
     PlaceOrderView,
 )
+from novatrade.bootstrap.place_order import (
+    place_order_handler_factory,
+)
 
 urlpatterns = [
     path(
@@ -19,7 +22,9 @@ urlpatterns = [
     ),
     path(
         "orders/<uuid:order_id>/place/",
-        PlaceOrderView.as_view(),
+        PlaceOrderView.as_view(
+            handler=place_order_handler_factory(),
+        ),
         name="order-place",
     ),
 ]
