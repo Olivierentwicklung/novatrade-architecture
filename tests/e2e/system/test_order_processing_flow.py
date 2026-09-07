@@ -3,7 +3,6 @@ from uuid import UUID
 
 import pytest
 from django.urls import reverse
-from novatrade.bootstrap.process_events import process_next_published_event
 from redis import Redis
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -12,6 +11,7 @@ from novatrade.adapters.django.order_app.persistence.order_repository import (
     DjangoOrderRepository,
 )
 from novatrade.adapters.redis.event_channel import EVENT_CHANNEL
+from novatrade.bootstrap.process_events import process_next_published_event
 from novatrade.domain.order import Order
 
 
