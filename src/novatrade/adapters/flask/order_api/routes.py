@@ -7,6 +7,7 @@ from novatrade.application.commands.place_order import PlaceOrderCommand
 from novatrade.application.commands.place_order_handler import (
     PlaceOrderCommandHandler,
 )
+from novatrade.application.ports.order_repository_errors import OrderNotFound
 
 
 def create_order_blueprint(
@@ -25,5 +26,9 @@ def create_order_blueprint(
         place_order_handler.handle(command)
 
         return "", 200
+
+    @orders.errorhandler(OrderNotFound)
+    def handle_order_not_found(_error: OrderNotFound) -> tuple[str, int]:
+        return "", 404
 
     return orders
