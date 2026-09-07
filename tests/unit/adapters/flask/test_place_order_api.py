@@ -1,8 +1,8 @@
 from uuid import uuid4
 
 from novatrade.adapters.flask.app import create_app
-
 from novatrade.application.commands.place_order import PlaceOrderCommand
+from novatrade.application.ports.order_repository_errors import OrderNotFound
 
 
 class SpyPlaceOrderCommandHandler:
@@ -13,6 +13,13 @@ class SpyPlaceOrderCommandHandler:
 
     def handle(self, command: PlaceOrderCommand) -> None:
         self.handled_command = command
+
+
+class OrderNotFoundHandler:
+    """Simulates the Application failing to find the requested Order."""
+
+    def handle(self, command: PlaceOrderCommand) -> None:
+        raise OrderNotFound(command.order_id)
 
 
 def test_post_place_order_translates_http_request_to_command() -> None:
@@ -30,3 +37,14 @@ def test_post_place_order_translates_http_request_to_command() -> None:
     assert command is not None
     assert command.order_id == order_id
     assert command.placed_at.tzinfo is not None
+
+
+def test_post_place_order_translates_order_not_found_to_http_404() -> None:
+    handler = OrderNotFoundHandler()
+    app = create_app(place_order_handler=handler)
+    client = app.test_client()
+    order_id = uuid4()
+
+    response = client.post(f"/orders/{order_id}/place")
+
+    assert response.status_code == 404
