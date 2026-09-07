@@ -22,8 +22,6 @@ Jinja2==3.1.6
 
 MarkupSafe==3.0.3
 
--e git+https://github.com/Olivierentwicklung/novatrade-architecture.git@c1d4d54e8171263fa22166c7ecbaacd6e60b1766#egg=novatrade
-
 packaging==26.3
 
 pluggy==1.6.0
