@@ -37,6 +37,3 @@ class DjangoUnitOfWork:
             exc_value,
             traceback,
         )
-
-    def commit(self) -> None:
-        pass
